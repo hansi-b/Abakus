@@ -2,12 +2,28 @@ import sys
 from PySide2 import  QtWidgets as qw
 from PySide2.QtCore import QDate, QLocale, Qt
 import datetime
+from PySide2.QtGui import QFontDatabase, QFont
+import pathlib
+
+
+def pp(myStr):
+    """
+        pad string to avoid clipping in drop-downs
+    """
+    return " {}  ".format(myStr)
 
 
 def offsetVonDate(fromDate):
     year, month = fromDate.year, fromDate.month + 2
     if month > 12:
         year, month = year + 1, month - 12
+    return datetime.date(year, month , 1)
+
+
+def offsetSeitDate(fromDate):
+    year, month = fromDate.year, fromDate.month - 2
+    if month < 1:
+        year, month = year - 1, month + 12
     return datetime.date(year, month , 1)
 
 
@@ -18,7 +34,7 @@ def date2QDate(pyDate):
 def germanDatePicker(selected: QDate) -> qw.QDateEdit:
     picker = qw.QDateEdit()
     
-    picker.setDisplayFormat("dd.MM.yyyy")
+    picker.setDisplayFormat(pp("dd.MM.yyyy"))
     picker.setLocale(QLocale.German)
 
     picker.setCalendarPopup(True)
@@ -71,21 +87,21 @@ class GruppeUndStufe(qw.QWidget):
 
         zeile.addWidget(qw.QLabel("Entgeltgruppe"))
         gruppe = qw.QComboBox()
-        gruppe.addItem("E 10")
-        gruppe.addItem("E 13")
+        gruppe.addItem(pp("E 10"))
+        gruppe.addItem(pp("E 13"))
         zeile.addWidget(gruppe)
 
         zeile.addWidget(qw.QLabel("Stufe"))
         stufe = qw.QComboBox()
         for s in "1 2 3 4 5 6".split():
-            stufe.addItem(s)
+            stufe.addItem(pp(s))
         zeile.addWidget(stufe)
 
         zeile.addWidget(qw.QLabel("Umfang"))
         umfang = qw.QSpinBox()
         umfang.setRange(10, 100)
         umfang.setValue(100)
-        umfang.setSuffix("%")
+        umfang.setSuffix("% ")
         zeile.addWidget(umfang)
 
         zeile.addStretch(1)
@@ -100,13 +116,13 @@ class Vorbeschäftigung(qw.QWidget):
         stufenZeile = qw.QHBoxLayout()
 
         stufenZeile.addWidget(qw.QLabel("beschäftigt seit"))
-        seitPicker = pastPicker(offsetVonDate(datetime.date.today()))
+        seitPicker = pastPicker(offsetSeitDate(datetime.date.today()))
         stufenZeile.addWidget(seitPicker)
 
         stufenZeile.addWidget(qw.QLabel("Stufe aktuell"))
         stufe = qw.QComboBox()
         for s in "1 2 3 4 5 6".split():
-            stufe.addItem(s)
+            stufe.addItem(pp(s))
         stufenZeile.addWidget(stufe)
         wechselPicker = futurePicker(offsetVonDate(datetime.date.today()))
 
@@ -121,6 +137,7 @@ class Abakus(qw.QWidget):
 
     def __init__(self):
         super().__init__()
+        self.setWindowTitle("Abakus")
 
         self.layout = qw.QVBoxLayout()
 
@@ -133,9 +150,15 @@ class Abakus(qw.QWidget):
 
 
 if __name__ == "__main__":
+    fontPath = pathlib.Path(__file__).parent / "../../resources/NotoSansDisplay-Regular.ttf"
+    print(fontPath, fontPath.exists())
+    
     app = qw.QApplication([])
+    QFontDatabase().addApplicationFont(str(fontPath))
+    app.setFont(QFont("Noto Sans Display", 12))
+#     print(app.font())
+
     widget = Abakus()
-    # widget.resize(800, 600)
     widget.show()
 
     sys.exit(app.exec_())
