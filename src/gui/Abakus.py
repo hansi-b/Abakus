@@ -112,10 +112,14 @@ class Vorbeschäftigung(qw.QWidget):
     
     def __init__(self):
         super().__init__()
-        
+
         stufenZeile = qw.QHBoxLayout()
 
-        stufenZeile.addWidget(qw.QLabel("beschäftigt seit"))
+        stufenZeile.addWidget(qw.QLabel("vorbeschäftigt"))
+        istVor = qw.QCheckBox()
+        stufenZeile.addWidget(istVor)
+
+        stufenZeile.addWidget(qw.QLabel("seit"))
         seitPicker = pastPicker(offsetSeitDate(datetime.date.today()))
         stufenZeile.addWidget(seitPicker)
 
@@ -131,6 +135,15 @@ class Vorbeschäftigung(qw.QWidget):
 
         stufenZeile.addStretch(1)
         self.setLayout(stufenZeile)
+
+        elements = [seitPicker, stufe, wechselPicker]
+
+        def toggle():
+            for e in elements:
+                e.setEnabled(not e.isEnabled())
+        
+        toggle()
+        istVor.stateChanged.connect(toggle)
 
 
 class Abakus(qw.QWidget):
@@ -151,7 +164,7 @@ class Abakus(qw.QWidget):
 
 if __name__ == "__main__":
     fontPath = pathlib.Path(__file__).parent / "../../resources/NotoSansDisplay-Regular.ttf"
-    print(fontPath, fontPath.exists())
+#    print(fontPath, fontPath.exists())
     
     app = qw.QApplication([])
     QFontDatabase().addApplicationFont(str(fontPath))
