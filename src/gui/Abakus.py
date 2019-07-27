@@ -15,7 +15,7 @@ def date2QDate(pyDate):
     return QDate.fromString(str(pyDate), "yyyy-MM-dd")
 
 
-def futureDatePicker(selected : QDate) -> qw.QDateEdit:
+def germanDatePicker(selected: QDate) -> qw.QDateEdit:
     picker = qw.QDateEdit()
     
     picker.setDisplayFormat("dd.MM.yyyy")
@@ -28,9 +28,20 @@ def futureDatePicker(selected : QDate) -> qw.QDateEdit:
     calendar.setHorizontalHeaderFormat(qw.QCalendarWidget.HorizontalHeaderFormat.SingleLetterDayNames)
     calendar.setVerticalHeaderFormat(qw.QCalendarWidget.ISOWeekNumbers)
     
-    picker.setMinimumDate(QDate.currentDate())
     picker.setDate(selected)
+    return picker
 
+
+def futurePicker(selected : QDate) -> qw.QDateEdit:
+
+    picker = germanDatePicker(selected)
+    picker.setMinimumDate(QDate.currentDate())
+    return picker
+
+
+def pastPicker(selected : QDate) -> qw.QDateEdit:
+    picker = germanDatePicker(selected)
+    picker.setMaximumDate(QDate.currentDate())
     return picker
 
 
@@ -40,8 +51,8 @@ class Zeitraum(qw.QWidget):
         super().__init__()
         zeile = qw.QHBoxLayout()
 
-        self.vonPicker = futureDatePicker(offsetVonDate(datetime.date.today()))
-        self.bisPicker = futureDatePicker(self.vonPicker.date().addMonths(3)) 
+        self.vonPicker = futurePicker(offsetVonDate(datetime.date.today()))
+        self.bisPicker = futurePicker(self.vonPicker.date().addMonths(3)) 
 
         zeile.addWidget(qw.QLabel("von"))
         zeile.addWidget(self.vonPicker)
@@ -52,7 +63,7 @@ class Zeitraum(qw.QWidget):
         self.setLayout(zeile)
 
 
-class Gruppe(qw.QWidget):
+class GruppeUndStufe(qw.QWidget):
     
     def __init__(self):
         super().__init__()
@@ -66,16 +77,44 @@ class Gruppe(qw.QWidget):
 
         zeile.addWidget(qw.QLabel("Stufe"))
         stufe = qw.QComboBox()
-        stufe.addItem("1")
-        stufe.addItem("2")
-        stufe.addItem("3")
-        stufe.addItem("4")
-        stufe.addItem("5")
-        stufe.addItem("6")
+        for s in "1 2 3 4 5 6".split():
+            stufe.addItem(s)
         zeile.addWidget(stufe)
+
+        zeile.addWidget(qw.QLabel("Umfang"))
+        umfang = qw.QSpinBox()
+        umfang.setRange(10, 100)
+        umfang.setValue(100)
+        umfang.setSuffix("%")
+        zeile.addWidget(umfang)
 
         zeile.addStretch(1)
         self.setLayout(zeile)
+
+
+class Vorbeschäftigung(qw.QWidget):
+    
+    def __init__(self):
+        super().__init__()
+        
+        stufenZeile = qw.QHBoxLayout()
+
+        stufenZeile.addWidget(qw.QLabel("beschäftigt seit"))
+        seitPicker = pastPicker(offsetVonDate(datetime.date.today()))
+        stufenZeile.addWidget(seitPicker)
+
+        stufenZeile.addWidget(qw.QLabel("Stufe aktuell"))
+        stufe = qw.QComboBox()
+        for s in "1 2 3 4 5 6".split():
+            stufe.addItem(s)
+        stufenZeile.addWidget(stufe)
+        wechselPicker = futurePicker(offsetVonDate(datetime.date.today()))
+
+        stufenZeile.addWidget(qw.QLabel("nächster Aufstieg"))
+        stufenZeile.addWidget(wechselPicker)
+
+        stufenZeile.addStretch(1)
+        self.setLayout(stufenZeile)
 
 
 class Abakus(qw.QWidget):
@@ -86,7 +125,8 @@ class Abakus(qw.QWidget):
         self.layout = qw.QVBoxLayout()
 
         self.layout.addWidget(Zeitraum())
-        self.layout.addWidget(Gruppe())
+        self.layout.addWidget(GruppeUndStufe())
+        self.layout.addWidget(Vorbeschäftigung())
 
         self.layout.addStretch(1)
         self.setLayout(self.layout)
@@ -95,7 +135,7 @@ class Abakus(qw.QWidget):
 if __name__ == "__main__":
     app = qw.QApplication([])
     widget = Abakus()
-    widget.resize(800, 600)
+    # widget.resize(800, 600)
     widget.show()
 
     sys.exit(app.exec_())
