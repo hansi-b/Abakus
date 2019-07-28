@@ -61,7 +61,7 @@ def pastPicker(selected : QDate) -> qw.QDateEdit:
     return picker
 
 
-class Zeitraum(qw.QWidget):
+class Beschäftigung(qw.QWidget):
     
     def __init__(self):
         super().__init__()
@@ -77,16 +77,6 @@ class Zeitraum(qw.QWidget):
         zeile.addWidget(self.vonPicker)
         zeile.addWidget(qw.QLabel("bis"))
         zeile.addWidget(self.bisPicker)
-
-        zeile.addStretch(1)
-        self.setLayout(zeile)
-
-
-class GruppeUndStufe(qw.QWidget):
-    
-    def __init__(self):
-        super().__init__()
-        zeile = qw.QHBoxLayout()
 
         zeile.addWidget(qw.QLabel("Entgeltgruppe"))
         gruppe = qw.QComboBox()
@@ -159,8 +149,7 @@ class Abakus(qw.QWidget):
 
         self.layout = qw.QVBoxLayout()
 
-        self.layout.addWidget(Zeitraum())
-        self.layout.addWidget(GruppeUndStufe())
+        self.layout.addWidget(Beschäftigung())
         self.layout.addWidget(Vorbeschäftigung())
 
         self.layout.addStretch(1)
