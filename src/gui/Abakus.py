@@ -8,7 +8,7 @@ import pathlib
 
 def pp(myStr):
     """
-        pad string to avoid clipping in drop-downs
+        pad string to avoid clipping in dropdowns
     """
     return " {}  ".format(myStr)
 
@@ -28,7 +28,7 @@ def offsetSeitDate(fromDate):
 
 
 def date2QDate(pyDate):
-    return QDate.fromString(str(pyDate), "yyyy-MM-dd")
+    return QDate(pyDate.year, pyDate.month, pyDate.day)
 
 
 def germanDatePicker(selected: QDate) -> qw.QDateEdit:
@@ -67,8 +67,11 @@ class Zeitraum(qw.QWidget):
         super().__init__()
         zeile = qw.QHBoxLayout()
 
-        self.vonPicker = futurePicker(offsetVonDate(datetime.date.today()))
-        self.bisPicker = futurePicker(self.vonPicker.date().addMonths(3)) 
+        vonDate = date2QDate(offsetVonDate(datetime.date.today()))
+        self.vonPicker = futurePicker(vonDate)
+        
+        bisDate = vonDate.addMonths(2)
+        self.bisPicker = futurePicker(QDate(bisDate.year(), bisDate.month(), bisDate.daysInMonth()))
 
         zeile.addWidget(qw.QLabel("von"))
         zeile.addWidget(self.vonPicker)
@@ -119,30 +122,32 @@ class Vorbeschäftigung(qw.QWidget):
         istVor = qw.QCheckBox()
         stufenZeile.addWidget(istVor)
 
-        stufenZeile.addWidget(qw.QLabel("seit"))
+        seitLabel = qw.QLabel("seit")
+        stufenZeile.addWidget(seitLabel)
         seitPicker = pastPicker(offsetSeitDate(datetime.date.today()))
         stufenZeile.addWidget(seitPicker)
 
-        stufenZeile.addWidget(qw.QLabel("Stufe aktuell"))
+        stufeLabel = qw.QLabel("Stufe aktuell")
+        stufenZeile.addWidget(stufeLabel)
         stufe = qw.QComboBox()
         for s in "1 2 3 4 5 6".split():
             stufe.addItem(pp(s))
         stufenZeile.addWidget(stufe)
         wechselPicker = futurePicker(offsetVonDate(datetime.date.today()))
 
-        stufenZeile.addWidget(qw.QLabel("nächster Aufstieg"))
+        naechsterLabel = qw.QLabel("nächster Aufstieg")
+        stufenZeile.addWidget(naechsterLabel)
         stufenZeile.addWidget(wechselPicker)
 
         stufenZeile.addStretch(1)
         self.setLayout(stufenZeile)
 
-        elements = [seitPicker, stufe, wechselPicker]
+        elements = [seitLabel, seitPicker, stufeLabel, stufe, naechsterLabel, wechselPicker]
 
-        def toggle():
+        def toggle(state):
             for e in elements:
-                e.setEnabled(not e.isEnabled())
+                e.setEnabled(state)
         
-        toggle()
         istVor.stateChanged.connect(toggle)
 
 
