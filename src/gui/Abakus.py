@@ -2,8 +2,9 @@ import sys
 from PySide2 import  QtWidgets as qw
 from PySide2.QtCore import QDate, QLocale, Qt
 import datetime
-from PySide2.QtGui import QFontDatabase, QFont
+from PySide2.QtGui import QFontDatabase, QFont, QIcon
 import pathlib
+import logging
 
 
 def pp(myStr):
@@ -110,6 +111,7 @@ class Vorbeschäftigung(qw.QWidget):
 
         stufenZeile.addWidget(qw.QLabel("vorbeschäftigt"))
         istVor = qw.QCheckBox()
+        istVor.click()
         stufenZeile.addWidget(istVor)
 
         seitLabel = qw.QLabel("seit")
@@ -156,13 +158,22 @@ class Abakus(qw.QWidget):
         self.setLayout(self.layout)
 
 
+def resourcePath(resPath):
+    targetPath = pathlib.Path(__file__).parent / "../../resources" / resPath
+    targetPath = targetPath.resolve()
+    if not targetPath.exists():
+        logging.error("Ressource '{}' wurde nicht gefunden (gesucht in '{}')".format(resPath, targetPath))
+    return targetPath
+
+
 if __name__ == "__main__":
-    fontPath = pathlib.Path(__file__).parent / "../../resources/NotoSansDisplay-Regular.ttf"
-#    print(fontPath, fontPath.exists())
+    fontPath = resourcePath("NotoSansDisplay-Regular.ttf")
+    iconPath = resourcePath("icon.svg")
     
     app = qw.QApplication([])
     QFontDatabase().addApplicationFont(str(fontPath))
     app.setFont(QFont("Noto Sans Display", 12))
+    app.setWindowIcon(QIcon(str(iconPath)))
 #     print(app.font())
 
     widget = Abakus()
