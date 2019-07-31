@@ -8,9 +8,9 @@ from pathlib import Path
 from decimal import Decimal
 from builtins import str
 import re
-from excel.data import Stufe, ÖTV, Entgeltgruppe, Gehalt
 import logging
 from _decimal import ROUND_HALF_UP
+from abakus.model import Stufe, ÖTV, Entgeltgruppe, Gehalt
 
 
 def resource(relativePath):

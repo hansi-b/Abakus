@@ -1,5 +1,5 @@
 import unittest
-from excel.data import Gehalt
+from abakus.model import Gehalt
 
 class GehälterTest(unittest.TestCase):
 

@@ -22,7 +22,7 @@ class Gehalt:
 
 class Stufe(Enum):
     """
-        eigentlich nur ein Typwrapper für die ganzzahlige Stufe; eine Enum
+        eigentlich nur ein Typwrapper für die ganzzahlige Stufe
     """
     eins = 1
     zwei = 2
