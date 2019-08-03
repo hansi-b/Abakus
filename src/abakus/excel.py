@@ -1,8 +1,8 @@
-'''
-Created on Jul 23, 2019
+__author__ = "Hans Bering"
+__copyright__ = "Copyright 2019, Hans Bering"
+__license__ = "GPL3"
+__status__ = "Development"
 
-@author: cb
-'''
 import pandas as pd
 from pathlib import Path
 from decimal import Decimal
@@ -10,7 +10,7 @@ from builtins import str
 import re
 import logging
 from _decimal import ROUND_HALF_UP
-from abakus.model import Stufe, ÖTV, Entgeltgruppe, Gehalt
+from abakus.model import Stufe, Entgeltgruppe, Gehalt, ÖtvKosten
 
 
 def resource(relativePath):
@@ -101,16 +101,15 @@ def createJahrAndGruppe(jahr, stufen, brutto, sonder):
 
 
 def createÖtv():
-    ötv = ÖTV({})
-
+    gehälter = {}
     for excelName, sheetName in (("E10 Personalkosten 2019-2021.xlsx", "E10"),
                                 ("E13 Personalkosten 2019-2021.xlsx", "E13")):
         excelDf = pd.read_excel(resource(excelName),
                          sheet_name=sheetName, engine="xlrd")
         for jahr, gruppe in iterGehälter(excelDf):
-            ötv.gehälter[(jahr, sheetName)] = gruppe
+            gehälter[(jahr, sheetName)] = gruppe
 
-    return ötv
+    return ÖtvKosten(gehälter)
 
     
 if __name__ == '__main__':

@@ -1,8 +1,8 @@
-'''
-Created on Jul 28, 2019
+__author__ = "Hans Bering"
+__copyright__ = "Copyright 2019, Hans Bering"
+__license__ = "GPL3"
+__status__ = "Development"
 
-@author: cb
-'''
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Mapping, Tuple
@@ -79,7 +79,6 @@ class ÖtvKosten:
     def summeMonatlichMitSonderzahlung(self, jahr: int, gus : GuS):
         
         return self.summeMonatlich(jahr, gus) + self.sonderzahlung(jahr, gus)
-
 
 if __name__ == '__main__':
     ö = ÖtvKosten({})
