@@ -1,23 +1,15 @@
-__author__ = "Hans Bering"
-__copyright__ = "Copyright 2019, Hans Bering"
-__license__ = "GPL3"
-__status__ = "Development"
-
+from _datetime import date
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Mapping, Tuple
 from enum import Enum
 
+__author__ = "Hans Bering"
+__copyright__ = "Copyright 2019, Hans Bering"
+__license__ = "GPL3"
+__status__ = "Development"
+
 # (Entgeltgruppe), Stufe x Jahr -> (Brutto, Jahressonderzahlung)
-
-
-@dataclass(eq=True, frozen=True)
-class Gehalt:
-    """
-        Monatliche Gehaltsdaten: Bruttogehalt (ohne Arbeitgeberzuschlag) und Sonderzahlung.
-    """
-    brutto : Decimal
-    sonderzahlung: Decimal
 
 
 class Stufe(Enum):
@@ -31,6 +23,14 @@ class Stufe(Enum):
     vier = 4
     fünf = 5
     sechs = 6
+    
+    def __init__(self, jahre):
+        self.jahre = jahre
+
+    def nächsterAufstieg(self, letzterAufstieg : date) -> date:
+        return date(letzterAufstieg.year + self.jahre,  #
+                    letzterAufstieg.month,  #
+                    letzterAufstieg.day)
 
 
 class Entgeltgruppe(Enum):
@@ -39,6 +39,15 @@ class Entgeltgruppe(Enum):
     """
     E_10 = 10
     E_13 = 13
+    
+    
+@dataclass(eq=True, frozen=True)
+class Gehalt:
+    """
+        Monatliche Gehaltsdaten: Bruttogehalt (ohne Arbeitgeberzuschlag) und Sonderzahlung.
+    """
+    brutto : Decimal
+    sonderzahlung: Decimal
 
 
 @dataclass(eq=True, frozen=True)
@@ -80,6 +89,8 @@ class ÖtvKosten:
         
         return self.summeMonatlich(jahr, gus) + self.sonderzahlung(jahr, gus)
 
+
 if __name__ == '__main__':
-    ö = ÖtvKosten({})
+    s = Stufe.eins.nächsterAufstieg()
+    print(s)
 
