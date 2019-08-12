@@ -1,4 +1,5 @@
-from _datetime import date
+from __future__ import annotations
+from datetime import date
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Mapping, Tuple
@@ -26,6 +27,9 @@ class Stufe(Enum):
     
     def __init__(self, jahre):
         self.jahre = jahre
+        
+    def nächste(self):
+        return Stufe(self.value + 1) if self.value < Stufe.sechs.value else self
 
     def nächsterAufstieg(self, letzterAufstieg : date) -> date:
         return date(letzterAufstieg.year + self.jahre,  #
@@ -39,8 +43,8 @@ class Entgeltgruppe(Enum):
     """
     E_10 = 10
     E_13 = 13
-    
-    
+
+
 @dataclass(eq=True, frozen=True)
 class Gehalt:
     """
@@ -53,11 +57,33 @@ class Gehalt:
 @dataclass(eq=True, frozen=True)
 class GuS:
     """
-        Kurz für Entgeltgruppe und Stufe
-        Klein, aber wir werden ständig mit dieser Kombination arbeiten
+        Entgeltgruppe, Stufe und Stufenanfangsdatum
+        
+        :param beginn: optional das Datum, seit dem die aktuelle Stufe gilt
     """
     gruppe : Entgeltgruppe
     stufe : Stufe
+    beginn : date = None
+
+    def am(self, datum : date) -> GuS:
+        """
+            :param datum: das Datum, für das die dann gültige GuS ermittelt werden soll
+            :return: entweder diese GuS, falls es keine Veränderung zum Argumentdatum
+                gibt; oder eine neue mit mindestens einem Stufenaufstieg und aktualisiertem
+                "beginn" (zwischen dem jetzigen "beginn" und dem Argumentdatum)
+        """
+        neueStufe, neuesSeit = self.stufe, self.beginn
+        
+        nächstesSeit = self.stufe.nächsterAufstieg(self.beginn)
+        while nächstesSeit <= datum:
+            neuesSeit = nächstesSeit
+            neueStufe = neueStufe.nächste()
+            nächstesSeit = neueStufe.nächsterAufstieg(nächstesSeit)
+
+        return self if neueStufe == self.stufe else GuS(self.gruppe, neueStufe, neuesSeit)
+
+    def stufenAufstieg(self):
+        return GuS(self.gruppe, self.stufe.nächste())
 
 
 class ÖtvKosten:

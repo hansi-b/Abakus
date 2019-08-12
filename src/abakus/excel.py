@@ -10,7 +10,7 @@ from builtins import str
 import re
 import logging
 from _decimal import ROUND_HALF_UP
-from abakus.model import Stufe, Entgeltgruppe, Gehalt, ÖtvKosten
+from abakus.model import Stufe, Entgeltgruppe, Gehalt, ÖtvKosten, GuS
 
 
 def resource(relativePath):
@@ -47,7 +47,10 @@ def isJahressonderzahlung(row):
     return None
 
 
-def iterGehälter(excel):
+def iterGehälter(excel, gruppe):
+    """
+        Parse eine Excel-Tabelle hinsichtlich der Kosteninformationen.
+    """
         
     aktJahr, aktStufen, aktBrutto, aktSonder = None, None, None, None
         
@@ -86,28 +89,25 @@ def iterGehälter(excel):
                 logging.warning("Unerwartete weitere Gehaltszeile {} gefunden, ignoriere vorige {}".format(aktSonder, sonder))
             aktSonder = sonder
 
-            yield createJahrAndGruppe(aktJahr, aktStufen, aktBrutto, aktSonder)            
+            for stufe, brutto, sonder in zip(aktStufen, aktBrutto, aktSonder):
+                yield (aktJahr, GuS(gruppe, stufe)), Gehalt(dec(brutto), dec(sonder))
+
             aktJahr, aktStufen, aktBrutto, aktSonder = None, None, None, None
-            continue
 
-
+            
 def dec(euros):
     return Decimal(euros).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
-
-
-def createJahrAndGruppe(jahr, stufen, brutto, sonder):
-    eg = Entgeltgruppe({stu : Gehalt(dec(bru), dec(son)) for stu, bru, son in zip(stufen, brutto, sonder)})
-    return jahr, eg
 
 
 def createÖtv():
     gehälter = {}
     for excelName, sheetName in (("E10 Personalkosten 2019-2021.xlsx", "E10"),
                                 ("E13 Personalkosten 2019-2021.xlsx", "E13")):
+        gruppe = Entgeltgruppe[sheetName.replace("E", "E_")]
         excelDf = pd.read_excel(resource(excelName),
                          sheet_name=sheetName, engine="xlrd")
-        for jahr, gruppe in iterGehälter(excelDf):
-            gehälter[(jahr, sheetName)] = gruppe
+        for key, value in iterGehälter(excelDf, gruppe):
+            gehälter[key] = value
 
     return ÖtvKosten(gehälter)
 
