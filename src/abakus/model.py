@@ -10,8 +10,6 @@ __copyright__ = "Copyright 2019, Hans Bering"
 __license__ = "GPL3"
 __status__ = "Development"
 
-# (Entgeltgruppe), Stufe x Jahr -> (Brutto, Jahressonderzahlung)
-
 
 class Stufe(Enum):
     """
@@ -58,32 +56,57 @@ class Gehalt:
 class GuS:
     """
         Entgeltgruppe, Stufe und Stufenanfangsdatum
-        
-        :param beginn: optional das Datum, seit dem die aktuelle Stufe gilt
     """
     gruppe : Entgeltgruppe
     stufe : Stufe
-    beginn : date = None
 
-    def am(self, datum : date) -> GuS:
+
+class AllGuS:
+    E10_1 = GuS(Entgeltgruppe.E_10, Stufe.eins)
+    E10_2 = GuS(Entgeltgruppe.E_10, Stufe.zwei)
+    E10_3 = GuS(Entgeltgruppe.E_10, Stufe.drei)
+    E10_4 = GuS(Entgeltgruppe.E_10, Stufe.vier)
+    E10_5 = GuS(Entgeltgruppe.E_10, Stufe.fünf)
+    E10_6 = GuS(Entgeltgruppe.E_10, Stufe.sechs)
+    E13_1 = GuS(Entgeltgruppe.E_13, Stufe.eins)
+    E13_2 = GuS(Entgeltgruppe.E_13, Stufe.zwei)
+    E13_3 = GuS(Entgeltgruppe.E_13, Stufe.drei)
+    E13_4 = GuS(Entgeltgruppe.E_13, Stufe.vier)
+    E13_5 = GuS(Entgeltgruppe.E_13, Stufe.fünf)
+    E13_6 = GuS(Entgeltgruppe.E_13, Stufe.sechs)
+
+
+def printAllGuS():
+    """ Create a copy and paste product of the static fields for GuS.
+        Hacky help to set them in the code to avoid UnknownVariable
+        when doing this dynamically with setattr.
+    """
+    import itertools
+    for e, s in itertools.product(Entgeltgruppe, Stufe):
+        print("    E{}_{} = GuS(Entgeltgruppe.{}, Stufe.{})".format(e.value, s.value, e.name, s.name))
+
+
+@dataclass(eq=True, frozen=True)
+class Stelle:
+    gus : GuS
+    beginn : date
+
+    def am(self, datum : date) -> Stelle:
         """
-            :param datum: das Datum, für das die dann gültige GuS ermittelt werden soll
-            :return: entweder diese GuS, falls es keine Veränderung zum Argumentdatum
+            :param datum: das Datum, für das die dann gültige Stelle ermittelt werden soll
+            :return: entweder diese Stelle, falls es keine Veränderung zum Argumentdatum
                 gibt; oder eine neue mit mindestens einem Stufenaufstieg und aktualisiertem
                 "beginn" (zwischen dem jetzigen "beginn" und dem Argumentdatum)
         """
-        neueStufe, neuesSeit = self.stufe, self.beginn
+        neueStufe, neuesSeit = self.gus.stufe, self.beginn
         
-        nächstesSeit = self.stufe.nächsterAufstieg(self.beginn)
+        nächstesSeit = self.gus.stufe.nächsterAufstieg(self.beginn)
         while nächstesSeit <= datum:
             neuesSeit = nächstesSeit
             neueStufe = neueStufe.nächste()
             nächstesSeit = neueStufe.nächsterAufstieg(nächstesSeit)
 
-        return self if neueStufe == self.stufe else GuS(self.gruppe, neueStufe, neuesSeit)
-
-    def stufenAufstieg(self):
-        return GuS(self.gruppe, self.stufe.nächste())
+        return self if neueStufe == self.gus.stufe else Stelle(GuS(self.gus.gruppe, neueStufe), neuesSeit)
 
 
 class ÖtvKosten:
@@ -110,13 +133,7 @@ class ÖtvKosten:
             :return: die Jahressonderzahlung
         """
         return self.gehälter[(jahr, gus)].sonderzahlung
+
     
-    def summeMonatlichMitSonderzahlung(self, jahr: int, gus : GuS):
-        
-        return self.summeMonatlich(jahr, gus) + self.sonderzahlung(jahr, gus)
-
-
-if __name__ == '__main__':
-    s = Stufe.eins.nächsterAufstieg()
-    print(s)
-
+if __name__ == "__main__":
+    printAllGuS()
