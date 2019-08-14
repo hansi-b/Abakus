@@ -1,15 +1,17 @@
+import sys
+import pathlib
+import logging
+import datetime
+from PySide2 import  QtWidgets as qw
+from PySide2.QtCore import QDate, QLocale, Qt
+from PySide2.QtGui import QFontDatabase, QIcon
+from gui.widgets import EnumCombo
+from abakus.model import Entgeltgruppe, Stufe
+
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
 __license__ = "GPL3"
 __status__ = "Development"
-
-import sys
-from PySide2 import  QtWidgets as qw
-from PySide2.QtCore import QDate, QLocale, Qt
-import datetime
-from PySide2.QtGui import QFontDatabase, QFont, QIcon
-import pathlib
-import logging
 
 
 def pp(myStr):
@@ -67,6 +69,18 @@ def pastPicker(selected : QDate) -> qw.QDateEdit:
     return picker
 
 
+class GruppeCombo(EnumCombo):
+
+    def __init__(self):
+        super().__init__(Entgeltgruppe, "Entgeltgruppe", lambda i : pp(i.name.replace("_", " ")))
+
+
+class StufeCombo(EnumCombo):
+
+    def __init__(self, label="Stufe"):
+        super().__init__(Stufe, label, lambda i: pp(i.value))
+
+
 class Beschäftigung(qw.QWidget):
     
     def __init__(self):
@@ -84,16 +98,9 @@ class Beschäftigung(qw.QWidget):
         zeile.addWidget(qw.QLabel("bis"))
         zeile.addWidget(self.bisPicker)
 
-        zeile.addWidget(qw.QLabel("Entgeltgruppe"))
-        gruppe = qw.QComboBox()
-        gruppe.addItem(pp("E 10"))
-        gruppe.addItem(pp("E 13"))
-        zeile.addWidget(gruppe)
+        zeile.addWidget(GruppeCombo())
 
-        zeile.addWidget(qw.QLabel("Stufe"))
-        stufe = qw.QComboBox()
-        for s in "1 2 3 4 5 6".split():
-            stufe.addItem(pp(s))
+        stufe = StufeCombo()
         zeile.addWidget(stufe)
 
         zeile.addWidget(qw.QLabel("Umfang"))
@@ -124,12 +131,8 @@ class Vorbeschäftigung(qw.QWidget):
         seitPicker = pastPicker(offsetSeitDate(datetime.date.today()))
         stufenZeile.addWidget(seitPicker)
 
-        stufeLabel = qw.QLabel("Stufe aktuell")
-        stufenZeile.addWidget(stufeLabel)
-        stufe = qw.QComboBox()
-        for s in "1 2 3 4 5 6".split():
-            stufe.addItem(pp(s))
-        stufenZeile.addWidget(stufe)
+        stufeAktuell = StufeCombo("Stufe aktuell")
+        stufenZeile.addWidget(stufeAktuell)
         wechselPicker = futurePicker(offsetVonDate(datetime.date.today()))
 
         naechsterLabel = qw.QLabel("nächster Aufstieg")
@@ -139,7 +142,7 @@ class Vorbeschäftigung(qw.QWidget):
         stufenZeile.addStretch(1)
         self.setLayout(stufenZeile)
 
-        elements = [seitLabel, seitPicker, stufeLabel, stufe, naechsterLabel, wechselPicker]
+        elements = [seitLabel, seitPicker, stufeAktuell, naechsterLabel, wechselPicker]
 
         def toggle(state):
             for e in elements:
@@ -168,18 +171,21 @@ def resourcePath(resPath):
     targetPath = targetPath.resolve()
     if not targetPath.exists():
         logging.error("Ressource '{}' wurde nicht gefunden (gesucht in '{}')".format(resPath, targetPath))
-    return targetPath
+    return str(targetPath)
 
 
 if __name__ == "__main__":
     fontPath = resourcePath("NotoSansDisplay-Regular.ttf")
     iconPath = resourcePath("icon.svg")
-    
+    cssPath = resourcePath("stylesheet.css")
+    with open(cssPath, "r") as styleFile:
+        styleSheet = str(styleFile.read())
+
     app = qw.QApplication([])
-    QFontDatabase().addApplicationFont(str(fontPath))
-    app.setFont(QFont("Noto Sans Display", 12))
-    app.setWindowIcon(QIcon(str(iconPath)))
-#     print(app.font())
+    QFontDatabase().addApplicationFont(fontPath)
+    
+    app.setStyleSheet(styleSheet)
+    app.setWindowIcon(QIcon(iconPath))
 
     widget = Abakus()
     widget.show()
