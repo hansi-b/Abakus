@@ -6,7 +6,8 @@ from PySide2 import  QtWidgets as qw
 from PySide2.QtCore import QDate, QLocale, Qt
 from PySide2.QtGui import QFontDatabase, QIcon
 from gui.widgets import EnumCombo
-from abakus.model import Entgeltgruppe, Stufe
+from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
+from abakus import laufend
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -98,10 +99,11 @@ class Beschäftigung(qw.QWidget):
         zeile.addWidget(qw.QLabel("bis"))
         zeile.addWidget(self.bisPicker)
 
-        zeile.addWidget(GruppeCombo())
+        self.gruppe = GruppeCombo()
+        zeile.addWidget(self.gruppe)
 
-        stufe = StufeCombo()
-        zeile.addWidget(stufe)
+        self.stufe = StufeCombo()
+        zeile.addWidget(self.stufe)
 
         zeile.addWidget(qw.QLabel("Umfang"))
         umfang = qw.QSpinBox()
@@ -157,14 +159,36 @@ class Abakus(qw.QWidget):
         super().__init__()
         self.setWindowTitle("Abakus")
 
-        self.layout = qw.QVBoxLayout()
+        layout = qw.QVBoxLayout()
 
-        self.layout.addWidget(Beschäftigung())
-        self.layout.addWidget(Vorbeschäftigung())
+        self.beschäftigung = Beschäftigung()
+        layout.addWidget(self.beschäftigung)
+        self.vorbeschäftigung = Vorbeschäftigung()
+        layout.addWidget(self.vorbeschäftigung)
+        
+        berechnung = qw.QPushButton("Berechnung")
+        berechnung.clicked.connect(self.berechne)
+        layout.addWidget(berechnung)        
 
-        self.layout.addStretch(1)
-        self.setLayout(self.layout)
+        layout.addStretch(1)
+        self.setLayout(layout)
+    
+    def berechne(self):
+        vonDate = qDateToPyDate(self.beschäftigung.vonPicker.date())
+        bisDate = qDateToPyDate(self.beschäftigung.bisPicker.date())
+        gruppe = self.beschäftigung.gruppe.currentItem()
+        stufe = self.beschäftigung.stufe.currentItem()
+        
+        print("von = {}".format(vonDate))
+        print("bis = {}".format(bisDate))
+        print("gruppe = {}".format(gruppe))
+        print("stufe = {}".format(stufe))
 
+        for e in laufend.monatsListe(Stelle(GuS(gruppe, stufe), vonDate), vonDate, bisDate):
+            print(e)
+
+def qDateToPyDate(qDate : QDate) -> datetime.date:
+    return datetime.date(qDate.year(), qDate.month(), qDate.day())
 
 def resourcePath(resPath):
     targetPath = pathlib.Path(__file__).parent / "../../resources" / resPath

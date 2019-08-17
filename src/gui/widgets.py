@@ -14,14 +14,21 @@ class EnumCombo(qw.QWidget):
         zeile = qw.QHBoxLayout()
         zeile.addWidget(qw.QLabel(pickerLabel))
 
+        self.itemByIndex = {}
+
         self.comboBox = qw.QComboBox()
-        for i in enumClass:
-            self.comboBox.addItem(itemLabelFnc(i))
+        for idx, item in enumerate(enumClass):
+            self.comboBox.addItem(itemLabelFnc(item))
+            self.itemByIndex[idx] = item
         zeile.addWidget(self.comboBox)
 
         zeile.addStretch(1)
         zeile.setContentsMargins(0, 0, 0, 0)
         self.setLayout(zeile)
+
+    def currentItem(self):
+        idx = self.comboBox.currentIndex()
+        return self.itemByIndex[idx]
 
 
 if __name__ == '__main__':
