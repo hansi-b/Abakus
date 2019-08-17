@@ -2,7 +2,7 @@ import sys
 import pathlib
 import logging
 import datetime
-from PySide2 import  QtWidgets as qw
+from PySide2 import QtWidgets as qw
 from PySide2.QtCore import QDate, QLocale, Qt
 from PySide2.QtGui import QFontDatabase, QIcon
 from gui.widgets import EnumCombo
@@ -82,7 +82,45 @@ class StufeCombo(EnumCombo):
         super().__init__(Stufe, label, lambda i: pp(i.value))
 
 
-class Beschäftigung(qw.QWidget):
+class WeiterOderNeu(qw.QWidget):
+    
+    def __init__(self):
+        super().__init__()
+        zeile = qw.QHBoxLayout()
+
+        neuButton = qw.QRadioButton("Neueinstellung")
+        weiterButton = qw.QRadioButton("Weiterbeschäftigung")
+
+        # strangely, the group signal is not emitted
+        group = qw.QButtonGroup()
+        group.addButton(neuButton)
+        group.addButton(weiterButton)
+
+        zeile.addWidget(neuButton)
+        zeile.addWidget(weiterButton)
+
+        self.stufe = StufeCombo("Stufe")
+        zeile.addWidget(self.stufe)
+
+        seitLabel = qw.QLabel("seit")
+        zeile.addWidget(seitLabel)
+        seitPicker = pastPicker(offsetSeitDate(datetime.date.today()))
+        zeile.addWidget(seitPicker)
+
+        def buttonToggled(_event):
+            seitLabel.setEnabled(weiterButton.isChecked())
+            seitPicker.setEnabled(weiterButton.isChecked())
+
+        neuButton.clicked.connect(buttonToggled)
+        weiterButton.clicked.connect(buttonToggled)
+        neuButton.click()
+
+        zeile.addStretch(1)
+        self.setLayout(zeile)
+    
+
+
+class Einstellung(qw.QWidget):
     
     def __init__(self):
         super().__init__()
@@ -102,9 +140,6 @@ class Beschäftigung(qw.QWidget):
         self.gruppe = GruppeCombo()
         zeile.addWidget(self.gruppe)
 
-        self.stufe = StufeCombo()
-        zeile.addWidget(self.stufe)
-
         zeile.addWidget(qw.QLabel("Umfang"))
         umfang = qw.QSpinBox()
         umfang.setRange(10, 100)
@@ -116,43 +151,6 @@ class Beschäftigung(qw.QWidget):
         self.setLayout(zeile)
 
 
-class Vorbeschäftigung(qw.QWidget):
-    
-    def __init__(self):
-        super().__init__()
-
-        stufenZeile = qw.QHBoxLayout()
-
-        stufenZeile.addWidget(qw.QLabel("vorbeschäftigt"))
-        istVor = qw.QCheckBox()
-        istVor.click()
-        stufenZeile.addWidget(istVor)
-
-        seitLabel = qw.QLabel("seit")
-        stufenZeile.addWidget(seitLabel)
-        seitPicker = pastPicker(offsetSeitDate(datetime.date.today()))
-        stufenZeile.addWidget(seitPicker)
-
-        stufeAktuell = StufeCombo("Stufe aktuell")
-        stufenZeile.addWidget(stufeAktuell)
-        wechselPicker = futurePicker(offsetVonDate(datetime.date.today()))
-
-        naechsterLabel = qw.QLabel("nächster Aufstieg")
-        stufenZeile.addWidget(naechsterLabel)
-        stufenZeile.addWidget(wechselPicker)
-
-        stufenZeile.addStretch(1)
-        self.setLayout(stufenZeile)
-
-        elements = [seitLabel, seitPicker, stufeAktuell, naechsterLabel, wechselPicker]
-
-        def toggle(state):
-            for e in elements:
-                e.setEnabled(state)
-        
-        istVor.stateChanged.connect(toggle)
-
-
 class Abakus(qw.QWidget):
 
     def __init__(self):
@@ -161,10 +159,10 @@ class Abakus(qw.QWidget):
 
         layout = qw.QVBoxLayout()
 
-        self.beschäftigung = Beschäftigung()
+        self.beschäftigung = Einstellung()
         layout.addWidget(self.beschäftigung)
-        self.vorbeschäftigung = Vorbeschäftigung()
-        layout.addWidget(self.vorbeschäftigung)
+        self.weiterOderNeu = WeiterOderNeu()
+        layout.addWidget(self.weiterOderNeu)
         
         berechnung = qw.QPushButton("Berechnung")
         berechnung.clicked.connect(self.berechne)
@@ -177,7 +175,7 @@ class Abakus(qw.QWidget):
         vonDate = qDateToPyDate(self.beschäftigung.vonPicker.date())
         bisDate = qDateToPyDate(self.beschäftigung.bisPicker.date())
         gruppe = self.beschäftigung.gruppe.currentItem()
-        stufe = self.beschäftigung.stufe.currentItem()
+        stufe = self.weiterOderNeu.stufe.currentItem()
         
         print("von = {}".format(vonDate))
         print("bis = {}".format(bisDate))
@@ -187,8 +185,10 @@ class Abakus(qw.QWidget):
         for e in laufend.monatsListe(Stelle(GuS(gruppe, stufe), vonDate), vonDate, bisDate):
             print(e)
 
+
 def qDateToPyDate(qDate : QDate) -> datetime.date:
     return datetime.date(qDate.year(), qDate.month(), qDate.day())
+
 
 def resourcePath(resPath):
     targetPath = pathlib.Path(__file__).parent / "../../resources" / resPath
