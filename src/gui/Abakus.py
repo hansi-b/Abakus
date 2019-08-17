@@ -89,35 +89,40 @@ class WeiterOderNeu(qw.QWidget):
         zeile = qw.QHBoxLayout()
 
         neuButton = qw.QRadioButton("Neueinstellung")
-        weiterButton = qw.QRadioButton("Weiterbeschäftigung")
+        self.weiterButton = qw.QRadioButton("Weiterbeschäftigung")
 
         # strangely, the group signal is not emitted
-        group = qw.QButtonGroup()
-        group.addButton(neuButton)
-        group.addButton(weiterButton)
+        self.group = qw.QButtonGroup()
+        self.group.addButton(neuButton)
+        self.group.addButton(self.weiterButton)
 
         zeile.addWidget(neuButton)
-        zeile.addWidget(weiterButton)
+        zeile.addWidget(self.weiterButton)
 
         self.stufe = StufeCombo("Stufe")
         zeile.addWidget(self.stufe)
 
         seitLabel = qw.QLabel("seit")
         zeile.addWidget(seitLabel)
-        seitPicker = pastPicker(offsetSeitDate(datetime.date.today()))
-        zeile.addWidget(seitPicker)
+        self.seitPicker = pastPicker(offsetSeitDate(datetime.date.today()))
+        zeile.addWidget(self.seitPicker)
 
-        def buttonToggled(_event):
-            seitLabel.setEnabled(weiterButton.isChecked())
-            seitPicker.setEnabled(weiterButton.isChecked())
+        def clicked(btn):
+            istWeiter = btn is self.weiterButton
+            seitLabel.setEnabled(istWeiter)
+            self.seitPicker.setEnabled(istWeiter)
 
-        neuButton.clicked.connect(buttonToggled)
-        weiterButton.clicked.connect(buttonToggled)
+        self.group.buttonClicked.connect(clicked)
         neuButton.click()
 
         zeile.addStretch(1)
         self.setLayout(zeile)
     
+    def istWeiter(self):
+        return self.group.checkedButton() is self.weiterButton
+
+    def seit(self):
+        return self.seitPicker.date()
 
 
 class Einstellung(qw.QWidget):
@@ -141,11 +146,12 @@ class Einstellung(qw.QWidget):
         zeile.addWidget(self.gruppe)
 
         zeile.addWidget(qw.QLabel("Umfang"))
-        umfang = qw.QSpinBox()
-        umfang.setRange(10, 100)
-        umfang.setValue(100)
-        umfang.setSuffix("% ")
-        zeile.addWidget(umfang)
+        self.umfang = qw.QSpinBox()
+        self.umfang.setRange(10, 100)
+        self.umfang.setSingleStep(10)
+        self.umfang.setValue(100)
+        self.umfang.setSuffix("% ")
+        zeile.addWidget(self.umfang)
 
         zeile.addStretch(1)
         self.setLayout(zeile)
@@ -176,11 +182,15 @@ class Abakus(qw.QWidget):
         bisDate = qDateToPyDate(self.beschäftigung.bisPicker.date())
         gruppe = self.beschäftigung.gruppe.currentItem()
         stufe = self.weiterOderNeu.stufe.currentItem()
+        umfang = self.beschäftigung.umfang.value()
         
         print("von = {}".format(vonDate))
         print("bis = {}".format(bisDate))
         print("gruppe = {}".format(gruppe))
         print("stufe = {}".format(stufe))
+        print("umfang = {}".format(umfang))
+        print("istWeiter = {}".format(self.weiterOderNeu.istWeiter()))
+        print("seit = {}".format(qDateToPyDate(self.weiterOderNeu.seit())))
 
         for e in laufend.monatsListe(Stelle(GuS(gruppe, stufe), vonDate), vonDate, bisDate):
             print(e)
