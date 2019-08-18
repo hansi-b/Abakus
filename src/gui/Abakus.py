@@ -179,21 +179,17 @@ class Abakus(qw.QWidget):
         self.setLayout(layout)
     
     def berechne(self):
-        vonDate = qDateToPyDate(self.beschäftigung.vonPicker.date())
         bisDate = qDateToPyDate(self.beschäftigung.bisPicker.date())
         gruppe = self.beschäftigung.gruppe.currentItem()
         stufe = self.weiterOderNeu.stufe.currentItem()
         umfang = self.beschäftigung.umfang.value()
         
-        print("von = {}".format(vonDate))
-        print("bis = {}".format(bisDate))
-        print("gruppe = {}".format(gruppe))
-        print("stufe = {}".format(stufe))
-        print("umfang = {}".format(umfang))
-        print("istWeiter = {}".format(self.weiterOderNeu.istWeiter()))
-        print("seit = {}".format(qDateToPyDate(self.weiterOderNeu.seit())))
+        vonDate = qDateToPyDate(self.beschäftigung.vonPicker.date())
+        stufenStart = qDateToPyDate(self.weiterOderNeu.seit()) if self.weiterOderNeu.istWeiter() else vonDate
+        
+        stelle = Stelle(GuS(gruppe, stufe), stufenStart)
 
-        for e in laufend.monatsListe(Stelle(GuS(gruppe, stufe), vonDate), vonDate, bisDate):
+        for e in laufend.monatsListe(stelle, vonDate, bisDate):
             print(e)
 
 
