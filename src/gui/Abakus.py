@@ -41,6 +41,10 @@ def date2QDate(pyDate):
     return QDate(pyDate.year, pyDate.month, pyDate.day)
 
 
+def qDate2date(qDate : QDate) -> datetime.date:
+    return datetime.date(qDate.year(), qDate.month(), qDate.day())
+
+
 def germanDatePicker(selected: QDate) -> qw.QDateEdit:
     picker = qw.QDateEdit()
     
@@ -158,6 +162,43 @@ class Einstellung(qw.QWidget):
         self.setLayout(zeile)
 
 
+class Details(qw.QWidget):
+
+    def __init__(self):
+        super().__init__()
+        zeile = qw.QHBoxLayout()      
+
+        self.table = qw.QTableWidget()
+        self.table.setColumnCount(5)
+        self.table.setEditTriggers(qw.QTableWidget.NoEditTriggers)
+        
+        for cIdx, label in enumerate("von bis Gruppe Stufe %".split()):
+            self.table.setHorizontalHeaderItem(cIdx, qw.QTableWidgetItem(label))
+
+        self.table.horizontalHeader().setSectionResizeMode(qw.QHeaderView.ResizeMode.Stretch)
+        self.table.verticalHeader().setSectionResizeMode(qw.QHeaderView.ResizeMode.Stretch)
+        self.table.setSizeAdjustPolicy(qw.QTableWidget.SizeAdjustPolicy.AdjustToContents)
+        zeile.addWidget(self.table)
+        zeile.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(zeile)
+
+    def clear(self):
+        while self.table.rowCount() > 0: 
+            self.table.removeRow(self.table.rowCount() - 1)
+
+    def add(self, von : datetime.date, bis : datetime.date, gruppe : Entgeltgruppe, stufe : Stufe, umfang: int):
+        self.table.insertRow(self.table.rowCount())
+        row = self.table.rowCount() - 1
+        self.table.setItem(row, 0, qw.QTableWidgetItem(str(von)))
+        self.table.setItem(row, 1, qw.QTableWidgetItem(str(bis)))
+        self.table.setItem(row, 2, qw.QTableWidgetItem("{}".format(gruppe.name)))
+        self.table.setItem(row, 3, qw.QTableWidgetItem("{}".format(stufe.name)))
+        self.table.setItem(row, 4, qw.QTableWidgetItem("{}".format(umfang)))
+        #self.table.horizontalHeader().setSectionResizeMode(qw.QHeaderView.ResizeMode.Stretch)
+        self.table.verticalHeader().setSectionResizeMode(qw.QHeaderView.ResizeMode.Stretch)
+        self.table.resizeRowsToContents()
+
+
 class Abakus(qw.QWidget):
 
     def __init__(self):
@@ -173,28 +214,25 @@ class Abakus(qw.QWidget):
         
         berechnung = qw.QPushButton("Berechnung")
         berechnung.clicked.connect(self.berechne)
-        layout.addWidget(berechnung)        
-
+        layout.addWidget(berechnung)
+        self.details = Details()
+        layout.addWidget(self.details)
         layout.addStretch(1)
         self.setLayout(layout)
     
     def berechne(self):
-        bisDate = qDateToPyDate(self.beschäftigung.bisPicker.date())
+        bisDate = qDate2date(self.beschäftigung.bisPicker.date())
         gruppe = self.beschäftigung.gruppe.currentItem()
         stufe = self.weiterOderNeu.stufe.currentItem()
         umfang = self.beschäftigung.umfang.value()
         
-        vonDate = qDateToPyDate(self.beschäftigung.vonPicker.date())
-        stufenStart = qDateToPyDate(self.weiterOderNeu.seit()) if self.weiterOderNeu.istWeiter() else vonDate
+        vonDate = qDate2date(self.beschäftigung.vonPicker.date())
+        stufenStart = qDate2date(self.weiterOderNeu.seit()) if self.weiterOderNeu.istWeiter() else vonDate
         
         stelle = Stelle(GuS(gruppe, stufe), stufenStart)
-
-        for e in laufend.monatsListe(stelle, vonDate, bisDate):
-            print(e)
-
-
-def qDateToPyDate(qDate : QDate) -> datetime.date:
-    return datetime.date(qDate.year(), qDate.month(), qDate.day())
+        self.details.clear()
+        for ab, aktStelle in laufend.monatsListe(stelle, vonDate, bisDate):
+            self.details.add(ab, ab, aktStelle.gus.gruppe, aktStelle.gus.stufe, umfang)
 
 
 def resourcePath(resPath):
@@ -208,8 +246,8 @@ def resourcePath(resPath):
 if __name__ == "__main__":
     fontPath = resourcePath("NotoSansDisplay-Regular.ttf")
     iconPath = resourcePath("icon.svg")
-    cssTmplPath = resourcePath("stylesheet.vars.css")
-    with open(cssTmplPath, "r") as styleFile:
+    varsCssPath = resourcePath("stylesheet.vars.css")
+    with open(varsCssPath, "r") as styleFile:
         styleSheet = "\n".join(varredCss2Css(styleFile.readlines()))
 
     app = qw.QApplication([])
