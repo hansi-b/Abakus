@@ -1,0 +1,19 @@
+/** {Variables}
+	# one variable per line, lines beginning with hashes are ignored
+ 	primary = #2d1b11
+	primaryBack = white
+	disabledLight = #dce1de
+*/
+
+QWidget {
+		background-color: "{primaryBack}";
+		color: '{primary}';
+        selection-background-color: '{primary}';
+		selection-color: '{primaryBack}';
+		font-family: "Noto Sans Display";
+		font-size: 12pt;
+}
+
+QWidget:disabled {
+		color: '{disabledLight}';
+}

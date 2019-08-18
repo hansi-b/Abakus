@@ -8,6 +8,7 @@ from PySide2.QtGui import QFontDatabase, QIcon
 from gui.widgets import EnumCombo
 from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
 from abakus import laufend
+from gui.cssVars import varredCss2Css
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -211,9 +212,9 @@ def resourcePath(resPath):
 if __name__ == "__main__":
     fontPath = resourcePath("NotoSansDisplay-Regular.ttf")
     iconPath = resourcePath("icon.svg")
-    cssPath = resourcePath("stylesheet.css")
-    with open(cssPath, "r") as styleFile:
-        styleSheet = str(styleFile.read())
+    cssTmplPath = resourcePath("stylesheet.vars.css")
+    with open(cssTmplPath, "r") as styleFile:
+        styleSheet = "\n".join(varredCss2Css(styleFile.readlines()))
 
     app = qw.QApplication([])
     QFontDatabase().addApplicationFont(fontPath)

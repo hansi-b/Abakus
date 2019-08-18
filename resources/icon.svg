@@ -59,7 +59,7 @@
       <g class="com.sun.star.drawing.CustomShape">
        <g id="id3">
         <rect class="BoundingBox" stroke="none" fill="none" x="-100" y="0" width="21102" height="20902"/>
-        <path fill="rgb(255,255,255)" stroke="none" d="M 10450,0 C 16432,0 21000,4525 21000,10450 21000,16375 16432,20900 10450,20900 4468,20900 -100,16375 -100,10450 -100,4525 4468,0 10450,0 Z M -100,0 L -100,0 Z M 21001,20901 L 21001,20901 Z"/>
+        <path fill="rgb(253,250,243)" stroke="none" d="M 10450,0 C 16432,0 21000,4525 21000,10450 21000,16375 16432,20900 10450,20900 4468,20900 -100,16375 -100,10450 -100,4525 4468,0 10450,0 Z M -100,0 L -100,0 Z M 21001,20901 L 21001,20901 Z"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.LineShape">
@@ -81,32 +81,32 @@
          </mask>
         </defs>
         <g style="mask:url(#mask1)">
-         <path fill="none" stroke="rgb(55,134,195)" stroke-width="1834" stroke-linejoin="round" d="M 1000,15100 L 20000,15100"/>
+         <path fill="none" stroke="rgb(232,152,94)" stroke-width="1834" stroke-linejoin="round" d="M 1000,15100 L 20000,15100"/>
         </g>
        </g>
       </g>
       <g class="com.sun.star.drawing.LineShape">
        <g id="id5">
         <rect class="BoundingBox" stroke="none" fill="none" x="83" y="5883" width="20835" height="1935"/>
-        <path fill="none" stroke="rgb(55,134,195)" stroke-width="1834" stroke-linejoin="round" d="M 1000,6900 L 20000,6800"/>
+        <path fill="none" stroke="rgb(232,152,94)" stroke-width="1834" stroke-linejoin="round" d="M 1000,6900 L 20000,6800"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.CustomShape">
        <g id="id6">
-        <rect class="BoundingBox" stroke="none" fill="none" x="4300" y="3400" width="7002" height="7002"/>
-        <path fill="rgb(43,79,129)" stroke="none" d="M 7800,3400 C 9784,3400 11300,4916 11300,6900 11300,8884 9784,10400 7800,10400 5816,10400 4300,8884 4300,6900 4300,4916 5816,3400 7800,3400 Z M 4300,3400 L 4300,3400 Z M 11301,10401 L 11301,10401 Z"/>
+        <rect class="BoundingBox" stroke="none" fill="none" x="4300" y="3400" width="7003" height="7002"/>
+        <path fill="rgb(45,27,17)" stroke="none" d="M 7800,3400 C 9784,3400 11300,4916 11300,6900 11300,8884 9784,10400 7800,10400 5816,10400 4300,8884 4300,6900 4300,4916 5816,3400 7800,3400 Z M 4300,3400 L 4300,3400 Z M 11301,10401 L 11301,10401 Z"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.CustomShape">
        <g id="id7">
-        <rect class="BoundingBox" stroke="none" fill="none" x="12600" y="3400" width="7002" height="7002"/>
-        <path fill="rgb(43,79,129)" stroke="none" d="M 16100,3400 C 18084,3400 19600,4916 19600,6900 19600,8884 18084,10400 16100,10400 14116,10400 12600,8884 12600,6900 12600,4916 14116,3400 16100,3400 Z M 12600,3400 L 12600,3400 Z M 19601,10401 L 19601,10401 Z"/>
+        <rect class="BoundingBox" stroke="none" fill="none" x="12500" y="3400" width="7003" height="7002"/>
+        <path fill="rgb(45,27,17)" stroke="none" d="M 16000,3400 C 17984,3400 19500,4916 19500,6900 19500,8884 17984,10400 16000,10400 14016,10400 12500,8884 12500,6900 12500,4916 14016,3400 16000,3400 Z M 12500,3400 L 12500,3400 Z M 19501,10401 L 19501,10401 Z"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.CustomShape">
        <g id="id8">
-        <rect class="BoundingBox" stroke="none" fill="none" x="1700" y="11600" width="7002" height="7002"/>
-        <path fill="rgb(43,79,129)" stroke="none" d="M 5200,11600 C 7184,11600 8700,13116 8700,15100 8700,17084 7184,18600 5200,18600 3216,18600 1700,17084 1700,15100 1700,13116 3216,11600 5200,11600 Z M 1700,11600 L 1700,11600 Z M 8701,18601 L 8701,18601 Z"/>
+        <rect class="BoundingBox" stroke="none" fill="none" x="1800" y="11600" width="7003" height="7002"/>
+        <path fill="rgb(45,27,17)" stroke="none" d="M 5300,11600 C 7284,11600 8800,13116 8800,15100 8800,17084 7284,18600 5300,18600 3316,18600 1800,17084 1800,15100 1800,13116 3316,11600 5300,11600 Z M 1800,11600 L 1800,11600 Z M 8801,18601 L 8801,18601 Z"/>
        </g>
       </g>
      </g>
