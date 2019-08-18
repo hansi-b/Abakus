@@ -162,6 +162,9 @@ class Einstellung(qw.QWidget):
         self.setLayout(zeile)
 
 
+# don't want to have to rely on the right locale being available
+monthNames = "Jan Feb Mär Apr Mai Jun Jul Aug Sep Okt Nov Dez".split()
+
 class Details(qw.QWidget):
 
     def __init__(self):
@@ -172,12 +175,12 @@ class Details(qw.QWidget):
         self.table.setColumnCount(5)
         self.table.setEditTriggers(qw.QTableWidget.NoEditTriggers)
         
-        for cIdx, label in enumerate("von bis Gruppe Stufe %".split()):
+        for cIdx, label in enumerate("Monat Gruppe Stufe % Kosten".split()):
             self.table.setHorizontalHeaderItem(cIdx, qw.QTableWidgetItem(label))
 
         self.table.horizontalHeader().setSectionResizeMode(qw.QHeaderView.ResizeMode.Stretch)
-        self.table.verticalHeader().setSectionResizeMode(qw.QHeaderView.ResizeMode.Stretch)
         self.table.setSizeAdjustPolicy(qw.QTableWidget.SizeAdjustPolicy.AdjustToContents)
+
         zeile.addWidget(self.table)
         zeile.setContentsMargins(0, 0, 0, 0)
         self.setLayout(zeile)
@@ -186,17 +189,18 @@ class Details(qw.QWidget):
         while self.table.rowCount() > 0: 
             self.table.removeRow(self.table.rowCount() - 1)
 
-    def add(self, von : datetime.date, bis : datetime.date, gruppe : Entgeltgruppe, stufe : Stufe, umfang: int):
+    def add(self, von : datetime.date, gruppe : Entgeltgruppe, stufe : Stufe, umfang: int):
         self.table.insertRow(self.table.rowCount())
         row = self.table.rowCount() - 1
-        self.table.setItem(row, 0, qw.QTableWidgetItem(str(von)))
-        self.table.setItem(row, 1, qw.QTableWidgetItem(str(bis)))
-        self.table.setItem(row, 2, qw.QTableWidgetItem("{}".format(gruppe.name)))
-        self.table.setItem(row, 3, qw.QTableWidgetItem("{}".format(stufe.name)))
-        self.table.setItem(row, 4, qw.QTableWidgetItem("{}".format(umfang)))
-        #self.table.horizontalHeader().setSectionResizeMode(qw.QHeaderView.ResizeMode.Stretch)
-        self.table.verticalHeader().setSectionResizeMode(qw.QHeaderView.ResizeMode.Stretch)
-        self.table.resizeRowsToContents()
+        self.__setItem(row, 0, "{} {}".format(monthNames[von.month - 1], von.year))
+        self.__setItem(row, 1, "{}".format(gruppe.name.replace("_", " ")))
+        self.__setItem(row, 2, "{}".format(stufe.value))
+        self.__setItem(row, 3, "{}".format(umfang))
+
+    def __setItem(self, row, col, content):
+        item = qw.QTableWidgetItem(content)
+        item.setTextAlignment(Qt.AlignCenter)
+        self.table.setItem(row, col, item)
 
 
 class Abakus(qw.QWidget):
@@ -231,8 +235,8 @@ class Abakus(qw.QWidget):
         
         stelle = Stelle(GuS(gruppe, stufe), stufenStart)
         self.details.clear()
-        for ab, aktStelle in laufend.monatsListe(stelle, vonDate, bisDate):
-            self.details.add(ab, ab, aktStelle.gus.gruppe, aktStelle.gus.stufe, umfang)
+        for stichtag, aktStelle in laufend.monatsListe(stelle, vonDate, bisDate):
+            self.details.add(stichtag, aktStelle.gus.gruppe, aktStelle.gus.stufe, umfang)
 
 
 def resourcePath(resPath):
@@ -244,6 +248,7 @@ def resourcePath(resPath):
 
 
 if __name__ == "__main__":
+    
     fontPath = resourcePath("NotoSansDisplay-Regular.ttf")
     iconPath = resourcePath("icon.svg")
     varsCssPath = resourcePath("stylesheet.vars.css")
