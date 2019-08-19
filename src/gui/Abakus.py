@@ -266,7 +266,7 @@ class Abakus(qw.QWidget):
         self.details.clear()
         total = Decimal(0)
         for stichtag, aktStelle in laufend.monatsListe(stelle, vonDate, bisDate):
-            kosten = self.ötv.summeMonatlich(stichtag.year, stelle.gus)
+            kosten = self.ötv.summeMonatlich(stichtag.year, aktStelle.gus)
             self.details.addDetail(stichtag, aktStelle.gus.gruppe, aktStelle.gus.stufe, umfang, kosten)
             total += kosten
         print(total)
