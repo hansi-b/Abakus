@@ -67,7 +67,6 @@ class KostenBerechnungTest(unittest.TestCase):
 
     def givenGehalt(self, jahr : int, gus : GuS, gehalt: Gehalt):
         self.gehälter[(jahr, gus)] = gehalt
-        print(gehalt)
 
         
 def d(f):

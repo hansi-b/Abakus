@@ -131,7 +131,7 @@ class ÖtvKosten:
             :return: die monatlichen Gesamtkosten mit Arbeitgeberzuschlag,
                     aber ohne Jahressonderzahlung
         """
-        return self.gehälter[(jahr, gus)].brutto * self.zuschlag
+        return dec(self.gehälter[(jahr, gus)].brutto * self.zuschlag)
 
     def sonderzahlung(self, jahr: int, gus : GuS):
         """
