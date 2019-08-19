@@ -12,7 +12,6 @@ from gui.widgets import EnumCombo
 from gui.cssVars import varredCss2Css
 from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
 from abakus import laufend, excel
-import decimal
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -174,7 +173,7 @@ class Details(qw.QWidget):
 
     def __init__(self):
         super().__init__()
-        zeile = qw.QHBoxLayout()      
+        zeile = qw.QHBoxLayout()
 
         self.table = qw.QTableWidget()
         self.table.setColumnCount(5)
@@ -222,12 +221,34 @@ class Details(qw.QWidget):
         self.__setItem(row, 1, "{}".format(gruppe.name.replace("_", " ")))
         self.__setItem(row, 2, "{}".format(stufe.value))
         self.__setItem(row, 3, "{}".format(umfang))
-        self.__setItem(row, 4, "{}".format(kosten))
+        self.__setItem(row, 4, "{0:n}".format(kosten))
 
     def __setItem(self, row, col, content):
         item = qw.QTableWidgetItem(content)
         item.setTextAlignment(Qt.AlignCenter)
         self.table.setItem(row, col, item)
+
+
+class Summe(qw.QWidget):
+
+    def __init__(self):
+        super().__init__()
+        zeile = qw.QHBoxLayout()
+
+        self.berechnung = qw.QPushButton("Berechnung")
+        zeile.addWidget(self.berechnung)
+        
+        label = qw.QLabel("Summe")
+        label.setAlignment(Qt.AlignRight)
+        zeile.addWidget(label)
+        
+        self.total = qw.QLineEdit()
+        self.total.setReadOnly(True)
+        label.setAlignment(Qt.AlignRight)
+        zeile.addWidget(self.total)
+
+        zeile.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(zeile)
 
 
 class Abakus(qw.QWidget):
@@ -244,10 +265,12 @@ class Abakus(qw.QWidget):
         layout.addWidget(self.beschäftigung)
         self.weiterOderNeu = WeiterOderNeu()
         layout.addWidget(self.weiterOderNeu)
+
+        self.summe = Summe()
+        layout.addWidget(self.summe)
         
-        berechnung = qw.QPushButton("Berechnung")
-        berechnung.clicked.connect(self.berechne)
-        layout.addWidget(berechnung)
+        self.summe.berechnung.clicked.connect(self.berechne)
+
         self.details = Details()
         layout.addWidget(self.details)
         layout.addStretch(1)
@@ -269,7 +292,7 @@ class Abakus(qw.QWidget):
             kosten = self.ötv.summeMonatlich(stichtag.year, aktStelle.gus)
             self.details.addDetail(stichtag, aktStelle.gus.gruppe, aktStelle.gus.stufe, umfang, kosten)
             total += kosten
-        print(total)
+        self.summe.total.setText("{0:n} €".format(total))
 
 
 def resourcePath(resPath):
