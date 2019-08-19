@@ -1,11 +1,13 @@
 import sys
+import io
+import csv
 import pathlib
 import logging
 import datetime
 from decimal import Decimal
 from PySide2 import QtWidgets as qw
 from PySide2.QtCore import QDate, QLocale, Qt
-from PySide2.QtGui import QFontDatabase, QIcon
+from PySide2.QtGui import QFontDatabase, QIcon, QKeySequence
 from gui.widgets import EnumCombo
 from gui.cssVars import varredCss2Css
 from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
@@ -187,6 +189,27 @@ class Details(qw.QWidget):
         zeile.addWidget(self.table)
         zeile.setContentsMargins(0, 0, 0, 0)
         self.setLayout(zeile)
+
+    def keyPressEvent(self, event):
+        """
+        copied from https://stackoverflow.com/a/40473855
+        """
+        if event.matches(QKeySequence.Copy):
+            selection = self.table.selectedIndexes()
+            if selection:
+                rows = sorted(index.row() for index in selection)
+                columns = sorted(index.column() for index in selection)
+                rowcount = rows[-1] - rows[0] + 1
+                colcount = columns[-1] - columns[0] + 1
+                table = [[''] * colcount for _ in range(rowcount)]
+                for index in selection:
+                    row = index.row() - rows[0]
+                    column = index.column() - columns[0]
+                    table[row][column] = index.data()
+                stream = io.StringIO()
+                csv.writer(stream, delimiter='\t').writerows(table)
+                qw.qApp.clipboard().setText(stream.getvalue())        
+        super().keyPressEvent(event)
 
     def clear(self):
         while self.table.rowCount() > 0: 
