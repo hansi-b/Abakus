@@ -1,15 +1,15 @@
+from abakus import model
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
 __license__ = "GPL3"
 __status__ = "Development"
 
-import pandas as pd
-from pathlib import Path
-from decimal import Decimal
 from builtins import str
 import re
 import logging
-from _decimal import ROUND_HALF_UP
+from pathlib import Path
+import decimal
+import pandas as pd
 from abakus.model import Stufe, Entgeltgruppe, Gehalt, ÖtvKosten, GuS
 
 
@@ -37,13 +37,13 @@ def isEntgeltgruppenZeile(row):
 
 def isArbeitnehmerBrutto(row):
     if str(row[1]).startswith("Arbeitnehmer Brutto"):
-        return [Decimal(x) for x in row[2:]]
+        return [decimal.Decimal(x) for x in row[2:]]
     return None
 
 
 def isJahressonderzahlung(row):
     if str(row[1]).startswith("Jahressonderzahlung"):
-        return [Decimal(x) for x in row[2:]]
+        return [decimal.Decimal(x) for x in row[2:]]
     return None
 
 
@@ -90,13 +90,9 @@ def iterGehälter(excel, gruppe):
             aktSonder = sonder
 
             for stufe, brutto, sonder in zip(aktStufen, aktBrutto, aktSonder):
-                yield (aktJahr, GuS(gruppe, stufe)), Gehalt(dec(brutto), dec(sonder))
+                yield (aktJahr, GuS(gruppe, stufe)), Gehalt(model.dec(brutto), model.dec(sonder))
 
             aktJahr, aktStufen, aktBrutto, aktSonder = None, None, None, None
-
-            
-def dec(euros):
-    return Decimal(euros).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
 
 
 def createÖtv():

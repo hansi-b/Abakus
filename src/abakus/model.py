@@ -1,9 +1,9 @@
 from __future__ import annotations
 from datetime import date
 from dataclasses import dataclass
-from decimal import Decimal
 from typing import Mapping, Tuple
 from enum import Enum
+import decimal
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -48,8 +48,8 @@ class Gehalt:
     """
         Monatliche Gehaltsdaten: Bruttogehalt (ohne Arbeitgeberzuschlag) und Sonderzahlung.
     """
-    brutto : Decimal
-    sonderzahlung: Decimal
+    brutto : decimal.Decimal
+    sonderzahlung: decimal.Decimal
 
 
 @dataclass(eq=True, frozen=True)
@@ -108,6 +108,10 @@ class Stelle:
 
         return self if neueStufe == self.gus.stufe else Stelle(GuS(self.gus.gruppe, neueStufe), neuesSeit)
 
+            
+def dec(euros):
+    return decimal.Decimal(euros).quantize(decimal.Decimal('.01'), rounding=decimal.ROUND_HALF_UP)
+
 
 class ÖtvKosten:
 
@@ -120,13 +124,14 @@ class ÖtvKosten:
     
     def __init__(self, gehälter):
         self.gehälter = gehälter
+        self.zuschlag = decimal.Decimal(1. + ÖtvKosten.arbeitgeberKostenZuschlag)
 
     def summeMonatlich(self, jahr: int, gus : GuS):
         """
             :return: die monatlichen Gesamtkosten mit Arbeitgeberzuschlag,
                     aber ohne Jahressonderzahlung
         """
-        return self.gehälter[(jahr, gus)].brutto * (1. + ÖtvKosten.arbeitgeberKostenZuschlag)
+        return self.gehälter[(jahr, gus)].brutto * self.zuschlag
 
     def sonderzahlung(self, jahr: int, gus : GuS):
         """

@@ -2,6 +2,7 @@ import unittest
 from abakus.model import Gehalt, GuS, \
     Stufe, ÖtvKosten, Stelle, AllGuS
 from datetime import date
+import decimal
 
 
 class StufenTest(unittest.TestCase):
@@ -52,9 +53,9 @@ class KostenBerechnungTest(unittest.TestCase):
         self.gehälter = {}
     
     def testSummeMonatlich(self):
-        self.givenGehalt(2012, AllGuS.E10_3, Gehalt(4., 7.))
+        self.givenGehalt(2012, AllGuS.E10_3, Gehalt(d(4.), d(7.)))
         ötv = ÖtvKosten(self.gehälter)
-        self.assertEquals(4. * 1.3,
+        self.assertAlmostEquals(d(4. * 1.3),
                           ötv.summeMonatlich(2012, AllGuS.E10_3))
 
     def testSonderzahlung(self):
@@ -66,7 +67,12 @@ class KostenBerechnungTest(unittest.TestCase):
 
     def givenGehalt(self, jahr : int, gus : GuS, gehalt: Gehalt):
         self.gehälter[(jahr, gus)] = gehalt
+        print(gehalt)
+
         
+def d(f):
+    return decimal.Decimal(f)
+
 
 if __name__ == "__main__":
     # import sys;sys.argv = ['', 'Test.testName']

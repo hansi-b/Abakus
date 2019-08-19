@@ -2,13 +2,15 @@ import sys
 import pathlib
 import logging
 import datetime
+from decimal import Decimal
 from PySide2 import QtWidgets as qw
 from PySide2.QtCore import QDate, QLocale, Qt
 from PySide2.QtGui import QFontDatabase, QIcon
 from gui.widgets import EnumCombo
-from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
-from abakus import laufend
 from gui.cssVars import varredCss2Css
+from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
+from abakus import laufend, excel
+import decimal
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -165,6 +167,7 @@ class Einstellung(qw.QWidget):
 # don't want to have to rely on the right locale being available
 monthNames = "Jan Feb Mär Apr Mai Jun Jul Aug Sep Okt Nov Dez".split()
 
+
 class Details(qw.QWidget):
 
     def __init__(self):
@@ -175,7 +178,7 @@ class Details(qw.QWidget):
         self.table.setColumnCount(5)
         self.table.setEditTriggers(qw.QTableWidget.NoEditTriggers)
         
-        for cIdx, label in enumerate("Monat Gruppe Stufe % Kosten".split()):
+        for cIdx, label in enumerate("Monat Gruppe Stufe % Kosten(€)".split()):
             self.table.setHorizontalHeaderItem(cIdx, qw.QTableWidgetItem(label))
 
         self.table.horizontalHeader().setSectionResizeMode(qw.QHeaderView.ResizeMode.Stretch)
@@ -189,13 +192,14 @@ class Details(qw.QWidget):
         while self.table.rowCount() > 0: 
             self.table.removeRow(self.table.rowCount() - 1)
 
-    def add(self, von : datetime.date, gruppe : Entgeltgruppe, stufe : Stufe, umfang: int):
+    def addDetail(self, von : datetime.date, gruppe : Entgeltgruppe, stufe : Stufe, umfang: int, kosten : Decimal):
         self.table.insertRow(self.table.rowCount())
         row = self.table.rowCount() - 1
         self.__setItem(row, 0, "{} {}".format(monthNames[von.month - 1], von.year))
         self.__setItem(row, 1, "{}".format(gruppe.name.replace("_", " ")))
         self.__setItem(row, 2, "{}".format(stufe.value))
         self.__setItem(row, 3, "{}".format(umfang))
+        self.__setItem(row, 4, "{}".format(kosten))
 
     def __setItem(self, row, col, content):
         item = qw.QTableWidgetItem(content)
@@ -205,9 +209,11 @@ class Details(qw.QWidget):
 
 class Abakus(qw.QWidget):
 
-    def __init__(self):
+    def __init__(self, ötv):
         super().__init__()
         self.setWindowTitle("Abakus")
+
+        self.ötv = ötv
 
         layout = qw.QVBoxLayout()
 
@@ -235,8 +241,12 @@ class Abakus(qw.QWidget):
         
         stelle = Stelle(GuS(gruppe, stufe), stufenStart)
         self.details.clear()
+        total = Decimal(0)
         for stichtag, aktStelle in laufend.monatsListe(stelle, vonDate, bisDate):
-            self.details.add(stichtag, aktStelle.gus.gruppe, aktStelle.gus.stufe, umfang)
+            kosten = self.ötv.summeMonatlich(stichtag.year, stelle.gus)
+            self.details.addDetail(stichtag, aktStelle.gus.gruppe, aktStelle.gus.stufe, umfang, kosten)
+            total += kosten
+        print(total)
 
 
 def resourcePath(resPath):
@@ -255,13 +265,15 @@ if __name__ == "__main__":
     with open(varsCssPath, "r") as styleFile:
         styleSheet = "\n".join(varredCss2Css(styleFile.readlines()))
 
+    ötv = excel.createÖtv()
+    
     app = qw.QApplication([])
     QFontDatabase().addApplicationFont(fontPath)
     
     app.setStyleSheet(styleSheet)
     app.setWindowIcon(QIcon(iconPath))
 
-    widget = Abakus()
+    widget = Abakus(ötv)
     widget.show()
 
     sys.exit(app.exec_())
