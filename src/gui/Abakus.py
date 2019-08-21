@@ -240,17 +240,17 @@ class Summe(qw.QWidget):
         super().__init__()
         zeile = qw.QHBoxLayout()
 
-        zeile.addStretch(.5)
         self.berechnung = qw.QPushButton("Berechnung")
         zeile.addWidget(self.berechnung)
 
-        label = qw.QLabel("Summe")
-        label.setAlignment(Qt.AlignRight)
+        zeile.addStretch(.5)
+        label = qw.QLabel("Summe:")
+        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         zeile.addWidget(label)
         
         self.total = qw.QLineEdit()
         self.total.setReadOnly(True)
-        label.setAlignment(Qt.AlignRight)
+        self.total.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         zeile.addWidget(self.total)
 
         zeile.setContentsMargins(-1, 0, -1, 0)
