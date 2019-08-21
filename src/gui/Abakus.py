@@ -237,7 +237,8 @@ class Summe(qw.QWidget):
 
         self.berechnung = qw.QPushButton("Berechnung")
         zeile.addWidget(self.berechnung)
-        
+
+        zeile.addStretch(.5)      
         label = qw.QLabel("Summe")
         label.setAlignment(Qt.AlignRight)
         zeile.addWidget(label)
