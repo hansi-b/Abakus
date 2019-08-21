@@ -124,6 +124,7 @@ class WeiterOderNeu(qw.QWidget):
         neuButton.click()
 
         zeile.addStretch(1)
+        zeile.setContentsMargins(-1, 0, -1, 0)
         self.setLayout(zeile)
     
     def istWeiter(self):
@@ -162,6 +163,7 @@ class Einstellung(qw.QWidget):
         zeile.addWidget(self.umfang)
 
         zeile.addStretch(1)
+        zeile.setContentsMargins(-1, 0, -1, 0)
         self.setLayout(zeile)
 
 
@@ -177,6 +179,9 @@ class Details(qw.QWidget):
 
         self.table = qw.QTableWidget()
         self.table.setColumnCount(5)
+        vH = self.table.verticalHeader()
+        vH.setDefaultSectionSize(vH.fontMetrics().height() + 4)
+        
         self.table.setEditTriggers(qw.QTableWidget.NoEditTriggers)
         
         for cIdx, label in enumerate("Monat Gruppe Stufe % Kosten(€)".split()):
@@ -186,7 +191,7 @@ class Details(qw.QWidget):
         self.table.setSizeAdjustPolicy(qw.QTableWidget.SizeAdjustPolicy.AdjustToContents)
 
         zeile.addWidget(self.table)
-        zeile.setContentsMargins(0, 0, 0, 0)
+        zeile.setContentsMargins(-1, 0, -1, 0)
         self.setLayout(zeile)
 
     def keyPressEvent(self, event):
@@ -235,10 +240,10 @@ class Summe(qw.QWidget):
         super().__init__()
         zeile = qw.QHBoxLayout()
 
+        zeile.addStretch(.5)
         self.berechnung = qw.QPushButton("Berechnung")
         zeile.addWidget(self.berechnung)
 
-        zeile.addStretch(.5)      
         label = qw.QLabel("Summe")
         label.setAlignment(Qt.AlignRight)
         zeile.addWidget(label)
@@ -248,7 +253,7 @@ class Summe(qw.QWidget):
         label.setAlignment(Qt.AlignRight)
         zeile.addWidget(self.total)
 
-        zeile.setContentsMargins(0, 0, 0, 0)
+        zeile.setContentsMargins(-1, 0, -1, 0)
         self.setLayout(zeile)
 
 
@@ -286,8 +291,8 @@ class Abakus(qw.QWidget):
         vonDate = qDate2date(self.beschäftigung.vonPicker.date())
         stufenStart = qDate2date(self.weiterOderNeu.seit()) if self.weiterOderNeu.istWeiter() else vonDate
         
-        stelle = Stelle(GuS(gruppe, stufe), stufenStart)
         self.details.clear()
+        stelle = Stelle(GuS(gruppe, stufe), stufenStart)
         total = Decimal(0)
         for stichtag, aktStelle in laufend.monatsListe(stelle, vonDate, bisDate):
             kosten = self.ötv.summeMonatlich(stichtag.year, aktStelle.gus)
