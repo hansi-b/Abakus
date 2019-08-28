@@ -1,9 +1,10 @@
 from __future__ import annotations
-from datetime import date
-from dataclasses import dataclass
-from typing import Mapping, Tuple
-from enum import Enum
+
 import decimal
+from dataclasses import dataclass
+from datetime import date
+from enum import Enum
+from typing import Mapping, Tuple
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -22,14 +23,14 @@ class Stufe(Enum):
     vier = 4
     fünf = 5
     sechs = 6
-    
+
     def __init__(self, jahre):
         self.jahre = jahre
-        
+
     def nächste(self):
         return Stufe(self.value + 1) if self.value < Stufe.sechs.value else self
 
-    def nächsterAufstieg(self, letzterAufstieg : date) -> date:
+    def nächsterAufstieg(self, letzterAufstieg: date) -> date:
         return date(letzterAufstieg.year + self.jahre,  #
                     letzterAufstieg.month,  #
                     letzterAufstieg.day)
@@ -48,7 +49,7 @@ class Gehalt:
     """
         Monatliche Gehaltsdaten: Bruttogehalt (ohne Arbeitgeberzuschlag) und Sonderzahlung.
     """
-    brutto : decimal.Decimal
+    brutto: decimal.Decimal
     sonderzahlung: decimal.Decimal
 
 
@@ -57,8 +58,8 @@ class GuS:
     """
         Entgeltgruppe, Stufe und Stufenanfangsdatum
     """
-    gruppe : Entgeltgruppe
-    stufe : Stufe
+    gruppe: Entgeltgruppe
+    stufe: Stufe
 
 
 class AllGuS:
@@ -88,10 +89,10 @@ def printAllGuS():
 
 @dataclass(eq=True, frozen=True)
 class Stelle:
-    gus : GuS
-    beginn : date
+    gus: GuS
+    beginn: date
 
-    def am(self, datum : date) -> Stelle:
+    def am(self, datum: date) -> Stelle:
         """
             :param datum: das Datum, für das die dann gültige Stelle ermittelt werden soll
             :return: entweder diese Stelle, falls es keine Veränderung zum Argumentdatum
@@ -99,7 +100,7 @@ class Stelle:
                 "beginn" (zwischen dem jetzigen "beginn" und dem Argumentdatum)
         """
         neueStufe, neuesSeit = self.gus.stufe, self.beginn
-        
+
         nächstesSeit = self.gus.stufe.nächsterAufstieg(self.beginn)
         while nächstesSeit <= datum:
             neuesSeit = nächstesSeit
@@ -108,37 +109,36 @@ class Stelle:
 
         return self if neueStufe == self.gus.stufe else Stelle(GuS(self.gus.gruppe, neueStufe), neuesSeit)
 
-            
+
 def dec(euros):
     return decimal.Decimal(euros).quantize(decimal.Decimal('.01'), rounding=decimal.ROUND_HALF_UP)
 
 
 class ÖtvKosten:
-
     """
     ein fixer Prozentsatz, der als Kostenzuschlag genommen wird
     """
     arbeitgeberKostenZuschlag = 0.3
 
-    gehälter : Mapping [ Tuple[int, GuS], Gehalt ]
-    
+    gehälter: Mapping[Tuple[int, GuS], Gehalt]
+
     def __init__(self, gehälter):
         self.gehälter = gehälter
         self.zuschlag = decimal.Decimal(1. + ÖtvKosten.arbeitgeberKostenZuschlag)
 
-    def summeMonatlich(self, jahr: int, gus : GuS):
+    def summeMonatlich(self, jahr: int, gus: GuS):
         """
             :return: die monatlichen Gesamtkosten mit Arbeitgeberzuschlag,
                     aber ohne Jahressonderzahlung
         """
         return dec(self.gehälter[(jahr, gus)].brutto * self.zuschlag)
 
-    def sonderzahlung(self, jahr: int, gus : GuS):
+    def sonderzahlung(self, jahr: int, gus: GuS):
         """
             :return: die Jahressonderzahlung
         """
         return self.gehälter[(jahr, gus)].sonderzahlung
 
-    
+
 if __name__ == "__main__":
     printAllGuS()
