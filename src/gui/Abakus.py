@@ -4,13 +4,13 @@ import io
 import logging
 import pathlib
 import sys
-from decimal import Decimal
 
 from PySide2 import QtWidgets as qw
 from PySide2.QtCore import QDate, QLocale, Qt
 from PySide2.QtGui import QFontDatabase, QIcon, QKeySequence, QGuiApplication
 
-from abakus import laufend, excel
+from abakus import excel
+from abakus.laufend import Summierer, MonatsKosten
 from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
 from gui.cssVars import varredCss2Css
 from gui.widgets import EnumCombo
@@ -220,14 +220,14 @@ class Details(qw.QWidget):
         while self.table.rowCount() > 0:
             self.table.removeRow(self.table.rowCount() - 1)
 
-    def addDetail(self, von: datetime.date, gruppe: Entgeltgruppe, stufe: Stufe, umfang: int, kosten: Decimal):
+    def addDetail(self, mk: MonatsKosten):
         self.table.insertRow(self.table.rowCount())
         row = self.table.rowCount() - 1
-        self.__setItem(row, 0, "{} {}".format(monthNames[von.month - 1], von.year))
-        self.__setItem(row, 1, "{}".format(gruppe.name.replace("_", " ")))
-        self.__setItem(row, 2, "{}".format(stufe.value))
-        self.__setItem(row, 3, "{}".format(umfang))
-        self.__setItem(row, 4, "{0:n}".format(kosten))
+        self.__setItem(row, 0, "{} {}".format(monthNames[mk.stichtag.month - 1], mk.stichtag.year))
+        self.__setItem(row, 1, "{}".format(mk.gus.gruppe.name.replace("_", " ")))
+        self.__setItem(row, 2, "{}".format(mk.gus.stufe.value))
+        self.__setItem(row, 3, "{}".format(mk.umfang))
+        self.__setItem(row, 4, "{0:n}".format(mk.kosten))
 
     def __setItem(self, row, col, content):
         item = qw.QTableWidgetItem(content)
@@ -260,11 +260,11 @@ class Summe(qw.QWidget):
 
 class Abakus(qw.QWidget):
 
-    def __init__(self, tarif):
+    def __init__(self, summierer):
         super().__init__()
         self.setWindowTitle("Abakus")
 
-        self.tarif = tarif
+        self.summierer = summierer
 
         layout = qw.QVBoxLayout()
 
@@ -292,14 +292,11 @@ class Abakus(qw.QWidget):
         vonDate = qDate2date(self.beschäftigung.vonPicker.date())
         stufenStart = qDate2date(self.weiterOderNeu.seit()) if self.weiterOderNeu.istWeiter() else vonDate
 
+        summe, details = self.summierer.calc(Stelle(GuS(gruppe, stufe), stufenStart), vonDate, bisDate, umfang)
         self.details.clear()
-        stelle = Stelle(GuS(gruppe, stufe), stufenStart)
-        total = Decimal(0)
-        for stichtag, aktStelle in laufend.monatsListe(stelle, vonDate, bisDate):
-            kosten = self.tarif.summeMonatlich(stichtag.year, aktStelle.gus)
-            self.details.addDetail(stichtag, aktStelle.gus.gruppe, aktStelle.gus.stufe, umfang, kosten)
-            total += kosten
-        self.summe.total.setText("{0:n} €".format(total))
+        for monatsKosten in details:
+            self.details.addDetail(monatsKosten)
+        self.summe.total.setText("{0:n} €".format(summe))
 
 
 def resourcePath(resPath):
@@ -317,7 +314,7 @@ if __name__ == "__main__":
     with open(varsCssPath, "r") as styleFile:
         styleSheet = "\n".join(varredCss2Css(styleFile.readlines()))
 
-    ötv = excel.createÖtv()
+    rechner = Summierer(excel.createÖtv())
 
     app = qw.QApplication([])
     QFontDatabase().addApplicationFont(fontPath)
@@ -325,7 +322,7 @@ if __name__ == "__main__":
     app.setStyleSheet(styleSheet)
     app.setWindowIcon(QIcon(iconPath))
 
-    widget = Abakus(ötv)
+    widget = Abakus(rechner)
     widget.show()
 
     sys.exit(app.exec_())
