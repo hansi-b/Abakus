@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 from typing import List, Tuple, Union
 
-from abakus.model import Stelle, GuS
+from abakus.model import Stelle, GuS, dec
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -77,10 +77,11 @@ class Summierer:
 
         total, details = Decimal(0), []
         stellePerMonat = monatsListe(stelle, von, bis)
-        for i, (stichtag, aktStelle) in stellePerMonat:
-            kosten = self.ötv.summeMonatlich(stichtag.year, aktStelle.gus)
+        umfangFaktor = Decimal(umfang / 100.)
+        for i, (stichtag, aktStelle) in enumerate(stellePerMonat):
+            kosten = dec(umfangFaktor * self.ötv.summeMonatlich(stichtag.year, aktStelle.gus))
             sonderzahlung = self.calcSonderzahlung(stichtag, bis, stellePerMonat[:i])
-            details.append(MonatsKosten(stichtag, aktStelle.gus, Decimal(umfang / 100.), kosten, sonderzahlung))
+            details.append(MonatsKosten(stichtag, aktStelle.gus, umfang, kosten, sonderzahlung))
             total += kosten
 
         return total, details
