@@ -1,8 +1,8 @@
-import decimal
 from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date
-from typing import List, Tuple
+from decimal import Decimal
+from typing import List, Tuple, Union
 
 from abakus.model import Stelle, GuS
 
@@ -40,6 +40,7 @@ def monatsListe(stelle: Stelle, von: date, bis: date) -> List[Tuple[date, Stelle
                         Der Beginn der Stelle darf nicht nach dem "von" liegen.
         :param von: das Datum, ab dem iteriert werden soll. Darf nicht vor dem Beginn der Stelle liegen.
         :param bis: das Datum, bis zu dem iteriert werden soll. Im Moment wird nur der volle Monat berücksichtigt.
+        :return: eine Liste von Paaren (Stichtag, Stelle) mit den monatsletzten Tagen und der dann gültigen Stelle
     """
     assert stelle.beginn <= von, "Der Beginn der Stelle {} liegt nach dem Anfangsdatum {}".format(stelle, von);
     assert von <= bis, "Das Anfangsdatum {} liegt nach dem Enddatum {}".format(von, bis)
@@ -55,13 +56,32 @@ def monatsListe(stelle: Stelle, von: date, bis: date) -> List[Tuple[date, Stelle
     return result
 
 
+def calcSonderzahlung(stichtag: date, bis: date, vorgeschichte: List[Tuple[date, Stelle]]) -> Union[None, Decimal]:
+    """
+    :return: None if Sonderzahlung does not apply (not November),
+                or a Decimal denoting the Sonderzahlung
+    """
+    # if not Nov, nothing to do here
+    if stichtag.month != 11:
+        return None
+    # if end date is before Dez, it's zero
+    if bis < date(stichtag.year, 12, 1):
+        return Decimal(0.)
+
+    # default case: average
+
+
+
+    return Decimal(1.)
+
+
 @dataclass(eq=True, frozen=True)
 class MonatsKosten:
     stichtag: date
     gus: GuS
-    umfang: float
-    kosten: decimal.Decimal
-    sonderzahlung: decimal.Decimal
+    umfang: Decimal
+    kosten: Decimal
+    sonderzahlung: Decimal
 
 
 class Summierer:
@@ -69,12 +89,17 @@ class Summierer:
     def __init__(self, ötv):
         self.ötv = ötv
 
-    def calc(self, stelle: Stelle, von: date, bis: date, umfang: float) -> Tuple[decimal.Decimal, List[MonatsKosten]]:
-        total = decimal.Decimal(0)
-        details = []
-        for stichtag, aktStelle in monatsListe(stelle, von, bis):
+    def calc(self, stelle: Stelle, von: date, bis: date, umfang: int) -> Tuple[Decimal, List[MonatsKosten]]:
+        """
+        :param umfang: a positive int up to including 100, indicating the percentage of work
+        """
+
+        total, details = Decimal(0), []
+        stellePerMonat = monatsListe(stelle, von, bis)
+        for i, (stichtag, aktStelle) in stellePerMonat:
             kosten = self.ötv.summeMonatlich(stichtag.year, aktStelle.gus)
-            details.append(MonatsKosten(stichtag, aktStelle.gus, umfang, kosten, decimal.Decimal(0)))
+            sonderzahlung = calcSonderzahlung(stichtag, bis, stellePerMonat[:i])
+            details.append(MonatsKosten(stichtag, aktStelle.gus, Decimal(umfang / 100.), kosten, sonderzahlung))
             total += kosten
 
         return total, details

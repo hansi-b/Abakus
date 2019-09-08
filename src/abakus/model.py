@@ -39,9 +39,10 @@ class Stufe(Enum):
 class Entgeltgruppe(Enum):
     """
         Definition der Entgeltgruppen, für die Gehaltsdaten vorliegen
+        Sonderzahlung laut https://oeffentlicher-dienst.info/tv-l/allg/jahressonderzahlung.html
     """
-    E_10 = 10
-    E_13 = 13
+    E_10 = 10, 80
+    E_13 = 13, 50
 
 
 @dataclass(eq=True, frozen=True)
@@ -84,7 +85,7 @@ def printAllGuS():
     """
     import itertools
     for e, s in itertools.product(Entgeltgruppe, Stufe):
-        print("    E{}_{} = GuS(Entgeltgruppe.{}, Stufe.{})".format(e.value, s.value, e.name, s.name))
+        print("    {}_{} = GuS(Entgeltgruppe.{}, Stufe.{})".format(e.name.replace("_", ""), s.value, e.name, s.name))
 
 
 @dataclass(eq=True, frozen=True)
