@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from abakus import laufend
 from abakus.model import Stelle, AllGuS
+from abakus.laufend import Summierer
 
 
 class MonatsListeTest(unittest.TestCase):
@@ -48,21 +49,25 @@ class MonatsListeTest(unittest.TestCase):
             self.fail("Expected AssertionError")
 
 
-lCalc = laufend.calcSonderzahlung
-
-
-class CalcSonderzahlungTest(unittest.TestCase):
+class SummiererCalcSonderzahlungTest(unittest.TestCase):
 
     def testNotNovember(self):
+        summi = Summierer(None)
+        lCalc = summi.calcSonderzahlung
+
         for m in range(1, 13):
             if m == 11:
                 continue
             self.assertIsNone(lCalc(date(2019, m, 1), date(2022, 12, 1), None))
 
     def testNovemberButNoDezember(self):
+        summi = Summierer(None)
+        lCalc = summi.calcSonderzahlung
         self.assertEqual(Decimal(0.), lCalc(date(2019, 11, 1), date(2019, 11, 30), None))
 
     def testNovemberAndDezember(self):
+        summi = Summierer(None)
+        lCalc = summi.calcSonderzahlung
         self.assertEqual(Decimal(1.), lCalc(date(2019, 11, 1), date(2020, 1, 1), None))
 
 

@@ -56,25 +56,6 @@ def monatsListe(stelle: Stelle, von: date, bis: date) -> List[Tuple[date, Stelle
     return result
 
 
-def calcSonderzahlung(stichtag: date, bis: date, vorgeschichte: List[Tuple[date, Stelle]]) -> Union[None, Decimal]:
-    """
-    :return: None if Sonderzahlung does not apply (not November),
-                or a Decimal denoting the Sonderzahlung
-    """
-    # if not Nov, nothing to do here
-    if stichtag.month != 11:
-        return None
-    # if end date is before Dez, it's zero
-    if bis < date(stichtag.year, 12, 1):
-        return Decimal(0.)
-
-    # default case: average
-
-
-
-    return Decimal(1.)
-
-
 @dataclass(eq=True, frozen=True)
 class MonatsKosten:
     stichtag: date
@@ -98,11 +79,30 @@ class Summierer:
         stellePerMonat = monatsListe(stelle, von, bis)
         for i, (stichtag, aktStelle) in stellePerMonat:
             kosten = self.ötv.summeMonatlich(stichtag.year, aktStelle.gus)
-            sonderzahlung = calcSonderzahlung(stichtag, bis, stellePerMonat[:i])
+            sonderzahlung = self.calcSonderzahlung(stichtag, bis, stellePerMonat[:i])
             details.append(MonatsKosten(stichtag, aktStelle.gus, Decimal(umfang / 100.), kosten, sonderzahlung))
             total += kosten
 
         return total, details
+
+    def calcSonderzahlung(self, stichtag: date, bis: date, vorgeschichte: List[Tuple[date, Stelle]]) -> Union[None, Decimal]:
+        """
+        Calculate the Jahressonderzahlung according to
+        https://oeffentlicher-dienst.info/tv-l/allg/jahressonderzahlung.html
+        
+        :return: None if Sonderzahlung does not apply (not November),
+                    or a Decimal denoting the Sonderzahlung
+        """
+        # if not Nov, nothing to do here
+        if stichtag.month != 11:
+            return None
+        # if end date is before Dez, it's zero
+        if bis < date(stichtag.year, 12, 1):
+            return Decimal(0.)
+    
+        # default case: average over past
+    
+        return Decimal(1.)
 
 
 if __name__ == '__main__':
