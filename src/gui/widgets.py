@@ -6,6 +6,15 @@ __license__ = "GPL3"
 __status__ = "Development"
 
 
+def percentSpinner():
+    pcnt = qw.QSpinBox()
+    pcnt.setRange(10, 100)
+    pcnt.setSingleStep(10)
+    pcnt.setValue(100)
+    pcnt.setSuffix("% ")
+    return pcnt
+
+
 class EnumCombo(qw.QWidget):
 
     def __init__(self, enumClass, pickerLabel, itemLabelFnc):

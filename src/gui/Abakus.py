@@ -6,19 +6,22 @@ import pathlib
 import sys
 
 from PySide2 import QtWidgets as qw
-from PySide2.QtCore import QDate, QLocale, Qt
+from PySide2.QtCore import QDate, QLocale, Qt, QSettings
 from PySide2.QtGui import QFontDatabase, QIcon, QKeySequence, QGuiApplication
 
 from abakus import excel
 from abakus.laufend import Summierer, MonatsKosten
 from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
 from gui.cssVars import varredCss2Css
-from gui.widgets import EnumCombo
+from gui.widgets import EnumCombo, percentSpinner
+from PySide2.QtWidgets import QSizePolicy
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
 __license__ = "GPL3"
 __status__ = "Development"
+
+ABAKUS = "Abakus"
 
 
 def pp(myStr):
@@ -89,15 +92,6 @@ class StufeCombo(EnumCombo):
 
     def __init__(self, label="Stufe"):
         super().__init__(Stufe, label, lambda i: pp(i.value))
-
-
-def percentSpinner():
-    pcnt = qw.QSpinBox()
-    pcnt.setRange(10, 100)
-    pcnt.setSingleStep(10)
-    pcnt.setValue(100)
-    pcnt.setSuffix("% ")
-    return pcnt
 
 
 class WeiterOderNeu(qw.QWidget):
@@ -271,10 +265,11 @@ class Summe(qw.QWidget):
 
 class Abakus(qw.QWidget):
 
-    def __init__(self, summierer):
+    def __init__(self, settings, summierer):
         super().__init__()
-        self.setWindowTitle("Abakus")
+        self.setWindowTitle(ABAKUS)
 
+        self.settings = settings
         self.summierer = summierer
 
         layout = qw.QVBoxLayout()
@@ -318,22 +313,68 @@ def resourcePath(resPath):
     return str(targetPath)
 
 
+class AbakusSettings():
+
+    def __init__(self):
+        self.settings = QSettings("HansB", ABAKUS)
+    
+    def val(self, key, defVal=None):
+        return self.settings.value("{}/{}".format(ABAKUS, key), defVal)
+
+    def setVal(self, key, val):
+        self.settings.setValue("{}/{}".format(ABAKUS, key), val)
+
+    def isShownLicense(self):
+        # Booleans are not properly stored/read, see
+        # e.g., https://bugreports.qt.io/browse/PYSIDE-820
+        return self.val("isShownLicense", "false").lower() == "true"
+
+    def setIsShownLicense(self, shown):
+        self.setVal("isShownLicense", shown)
+
+        
+def checkLicenseAgreement(app, settings):
+    if settings.isShownLicense():
+        return
+
+    licenseBox = qw.QMessageBox()
+    licenseBox.setWindowTitle("{} Lizenz".format(ABAKUS))
+    licenseBox.setTextFormat(Qt.TextFormat.RichText)
+    licenseBox.setStyleSheet("QLabel{min-width: 20em;}");
+
+    with open(resourcePath("README.html"), 'r') as lFile:
+        licenseText = lFile.read()
+    licenseBox.setText(licenseText)
+    licenseBox.addButton(qw.QMessageBox.No)
+    yes = licenseBox.addButton(qw.QMessageBox.Yes)
+    licenseBox.exec()
+    accepted = licenseBox.clickedButton() == yes
+    settings.setIsShownLicense(accepted)
+    
+    if not accepted:
+        sys.exit()
+
+
 if __name__ == "__main__":
+    
     fontPath = resourcePath("NotoSansDisplay-Regular.ttf")
     iconPath = resourcePath("icon.svg")
     varsCssPath = resourcePath("stylesheet.vars.css")
     with open(varsCssPath, "r") as styleFile:
         styleSheet = "\n".join(varredCss2Css(styleFile.readlines()))
 
+    settings = AbakusSettings()
     rechner = Summierer(excel.createÖtv())
 
+    QLocale.setDefault(QLocale(QLocale.German, QLocale.Germany))
     app = qw.QApplication([])
     QFontDatabase().addApplicationFont(fontPath)
 
     app.setStyleSheet(styleSheet)
     app.setWindowIcon(QIcon(iconPath))
-
-    widget = Abakus(rechner)
+    checkLicenseAgreement(app, settings)
+    
+    widget = Abakus(settings, rechner)
     widget.show()
 
     sys.exit(app.exec_())
