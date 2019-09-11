@@ -91,6 +91,15 @@ class StufeCombo(EnumCombo):
         super().__init__(Stufe, label, lambda i: pp(i.value))
 
 
+def percentSpinner():
+    pcnt = qw.QSpinBox()
+    pcnt.setRange(10, 100)
+    pcnt.setSingleStep(10)
+    pcnt.setValue(100)
+    pcnt.setSuffix("% ")
+    return pcnt
+
+
 class WeiterOderNeu(qw.QWidget):
 
     def __init__(self):
@@ -115,11 +124,17 @@ class WeiterOderNeu(qw.QWidget):
         zeile.addWidget(seitLabel)
         self.seitPicker = pastPicker(date2QDate(offsetSeitDate(datetime.date.today())))
         zeile.addWidget(self.seitPicker)
+        
+        umfang = qw.QLabel("Umfang")
+        zeile.addWidget(umfang)
+        self.umfangSpinner = percentSpinner()
+        zeile.addWidget(self.umfangSpinner)
+
+        weiterWidgets = [seitLabel, self.seitPicker, umfang, self.umfangSpinner]
 
         def clicked(btn):
             istWeiter = btn is self.weiterButton
-            seitLabel.setEnabled(istWeiter)
-            self.seitPicker.setEnabled(istWeiter)
+            for ww in weiterWidgets: ww.setEnabled(istWeiter)
 
         self.group.buttonClicked.connect(clicked)
         neuButton.click()
@@ -156,12 +171,8 @@ class Einstellung(qw.QWidget):
         zeile.addWidget(self.gruppe)
 
         zeile.addWidget(qw.QLabel("Umfang"))
-        self.umfang = qw.QSpinBox()
-        self.umfang.setRange(10, 100)
-        self.umfang.setSingleStep(10)
-        self.umfang.setValue(100)
-        self.umfang.setSuffix("% ")
-        zeile.addWidget(self.umfang)
+        self.umfang = percentSpinner()
+        zeile.addWidget(percentSpinner())
 
         zeile.addStretch(1)
         zeile.setContentsMargins(-1, 0, -1, 0)
