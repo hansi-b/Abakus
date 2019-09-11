@@ -104,3 +104,4 @@ venv.bak/
 .mypy_cache/
 trials
 resources/*.xlsx
+.idea
