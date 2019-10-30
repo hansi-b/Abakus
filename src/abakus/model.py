@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import decimal
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum
 from typing import Mapping, Tuple
 
@@ -36,6 +36,9 @@ class Stufe(Enum):
                     letzterAufstieg.day)
 
 
+Dec100 = Decimal(100.)
+
+
 class Entgeltgruppe(Enum):
     """
         Definition der Entgeltgruppen, für die Gehaltsdaten vorliegen
@@ -44,14 +47,21 @@ class Entgeltgruppe(Enum):
     E_10 = 10, 80
     E_13 = 13, 50
 
+    def anteilig(self, gehalt: Decimal) -> Decimal:
+        return gehalt * self.value[1] / Dec100
+
 
 @dataclass(eq=True, frozen=True)
 class Gehalt:
     """
         Monatliche Gehaltsdaten: Bruttogehalt (ohne Arbeitgeberzuschlag) und Sonderzahlung.
     """
-    brutto: decimal.Decimal
-    sonderzahlung: decimal.Decimal
+    brutto: Decimal
+    sonderzahlung: Decimal
+
+    @staticmethod
+    def by(b: float, s: float):
+        return Gehalt(Decimal(b), Decimal(s))
 
 
 @dataclass(eq=True, frozen=True)
@@ -112,7 +122,7 @@ class Stelle:
 
 
 def dec(euros):
-    return decimal.Decimal(euros).quantize(decimal.Decimal('.01'), rounding=decimal.ROUND_HALF_UP)
+    return Decimal(euros).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
 
 
 class ÖtvKosten:
@@ -125,7 +135,7 @@ class ÖtvKosten:
 
     def __init__(self, gehälter):
         self.gehälter = gehälter
-        self.zuschlag = decimal.Decimal(1. + ÖtvKosten.arbeitgeberKostenZuschlag)
+        self.zuschlag = Decimal(1. + ÖtvKosten.arbeitgeberKostenZuschlag)
 
     def summeMonatlich(self, jahr: int, gus: GuS):
         """

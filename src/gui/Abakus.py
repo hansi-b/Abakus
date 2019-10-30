@@ -14,7 +14,6 @@ from abakus.laufend import Summierer, MonatsKosten
 from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
 from gui.cssVars import varredCss2Css
 from gui.widgets import EnumCombo, percentSpinner
-from PySide2.QtWidgets import QSizePolicy
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -118,7 +117,7 @@ class WeiterOderNeu(qw.QWidget):
         zeile.addWidget(seitLabel)
         self.seitPicker = pastPicker(date2QDate(offsetSeitDate(datetime.date.today())))
         zeile.addWidget(self.seitPicker)
-        
+
         umfang = qw.QLabel("Umfang")
         zeile.addWidget(umfang)
         self.umfangSpinner = percentSpinner()
@@ -317,7 +316,7 @@ class AbakusSettings():
 
     def __init__(self):
         self.settings = QSettings("HansB", ABAKUS)
-    
+
     def val(self, key, defVal=None):
         return self.settings.value("{}/{}".format(ABAKUS, key), defVal)
 
@@ -332,9 +331,9 @@ class AbakusSettings():
     def setIsShownLicense(self, shown):
         self.setVal("isShownLicense", shown)
 
-        
-def checkLicenseAgreement(app, settings):
-    if settings.isShownLicense():
+
+def checkLicenseAgreement(appSettings):
+    if appSettings.isShownLicense():
         return
 
     licenseBox = qw.QMessageBox()
@@ -349,14 +348,13 @@ def checkLicenseAgreement(app, settings):
     yes = licenseBox.addButton(qw.QMessageBox.Yes)
     licenseBox.exec()
     accepted = licenseBox.clickedButton() == yes
-    settings.setIsShownLicense(accepted)
-    
+    appSettings.setIsShownLicense(accepted)
+
     if not accepted:
         sys.exit()
 
 
 if __name__ == "__main__":
-    
     fontPath = resourcePath("NotoSansDisplay-Regular.ttf")
     iconPath = resourcePath("icon.svg")
     varsCssPath = resourcePath("stylesheet.vars.css")
@@ -372,8 +370,8 @@ if __name__ == "__main__":
 
     app.setStyleSheet(styleSheet)
     app.setWindowIcon(QIcon(iconPath))
-    checkLicenseAgreement(app, settings)
-    
+    checkLicenseAgreement(settings)
+
     widget = Abakus(settings, rechner)
     widget.show()
 

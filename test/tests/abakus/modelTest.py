@@ -1,17 +1,18 @@
 import unittest
-from abakus.model import Gehalt, GuS, \
-    Stufe, ÖtvKosten, Stelle, AllGuS
 from datetime import date
-import decimal
+from decimal import Decimal
+
+from abakus.model import Gehalt, GuS, \
+    Stufe, ÖtvKosten, Stelle, AllGuS, Entgeltgruppe
 
 
 class StufenTest(unittest.TestCase):
-    
+
     def testNächsterAufstieg(self):
         self.assertEqual(date(2020, 3, 12),
-            Stufe.eins.nächsterAufstieg(date(2019, 3, 12)))  # @UndefinedVariable
+                         Stufe.eins.nächsterAufstieg(date(2019, 3, 12)))  # @UndefinedVariable
         self.assertEqual(date(2022, 12, 22),
-            Stufe.drei.nächsterAufstieg(date(2019, 12, 22)))  # @UndefinedVariable
+                         Stufe.drei.nächsterAufstieg(date(2019, 12, 22)))  # @UndefinedVariable
 
     def testNächste(self):
         self.assertEqual(Stufe.eins.nächste(), Stufe.zwei)  # @UndefinedVariable
@@ -27,50 +28,56 @@ class DatierteGuSTest(unittest.TestCase):
     def testAmAufstieg(self):
         start = Stelle(AllGuS.E10_1, date(2019, 1, 1))
         self.assertEqual(Stelle(AllGuS.E10_2, date(2020, 1, 1)),
-                          start.am(date(2020, 2, 17)))
+                         start.am(date(2020, 2, 17)))
 
     def testAmRandfall(self):
         start = Stelle(AllGuS.E10_1, date(2019, 1, 1))
         self.assertEqual(Stelle(AllGuS.E10_2, date(2020, 1, 1)),
-                          start.am(date(2020, 1, 1)))
+                         start.am(date(2020, 1, 1)))
 
     def testAmÜbersprung(self):
         start = Stelle(AllGuS.E10_1, date(2019, 1, 1))
         self.assertEqual(Stelle(AllGuS.E10_3, date(2022, 1, 1)),
-                          start.am(date(2023, 3, 4)))
+                         start.am(date(2023, 3, 4)))
 
     def testAmEndstufe(self):
         start = Stelle(AllGuS.E10_6, date(2019, 1, 1))
         self.assertEqual(start, start.am(date(2043, 3, 4)))
 
 
-class KostenBerechnungTest(unittest.TestCase):
+class TestMitGehältern(unittest.TestCase):
 
     def setUp(self):
         self.gehälter = {}
 
     def tearDown(self):
-        self.gehälter = {}
-    
+        del self.gehälter
+
+    def givenGehalt(self, jahr: int, gus: GuS, gehalt: Gehalt):
+        self.gehälter[(jahr, gus)] = gehalt
+
+    def ötv(self):
+        return ÖtvKosten(self.gehälter)
+
+
+class EntgeltGruppenTest(unittest.TestCase):
+
+    def testAnteilig(self):
+        self.assertAlmostEqual(Decimal(8.), Entgeltgruppe.E_10.anteilig(Decimal(10.)))
+        self.assertAlmostEqual(Decimal(5.), Entgeltgruppe.E_13.anteilig(Decimal(10.)))
+
+
+class KostenBerechnungTest(TestMitGehältern):
+
     def testSummeMonatlich(self):
-        self.givenGehalt(2012, AllGuS.E10_3, Gehalt(d(4.), d(7.)))
-        ötv = ÖtvKosten(self.gehälter)
-        self.assertAlmostEquals(d(4. * 1.3),
-                          ötv.summeMonatlich(2012, AllGuS.E10_3))
+        self.givenGehalt(2012, AllGuS.E10_3, Gehalt.by(4., 7.))
+        self.assertAlmostEqual(Decimal(4. * 1.3),
+                                self.ötv().summeMonatlich(2012, AllGuS.E10_3))
 
     def testSonderzahlung(self):
         self.givenGehalt(2012, AllGuS.E10_3, Gehalt(4., 7.2))
-        ötv = ÖtvKosten(self.gehälter)
-        
-        self.assertEqual(7.2,
-                          ötv.sonderzahlung(2012, AllGuS.E10_3))
 
-    def givenGehalt(self, jahr : int, gus : GuS, gehalt: Gehalt):
-        self.gehälter[(jahr, gus)] = gehalt
-
-        
-def d(f):
-    return decimal.Decimal(f)
+        self.assertEqual(7.2, self.ötv().sonderzahlung(2012, AllGuS.E10_3))
 
 
 if __name__ == "__main__":
