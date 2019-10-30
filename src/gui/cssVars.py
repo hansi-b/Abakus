@@ -6,10 +6,10 @@ __copyright__ = "Copyright 2019, Hans Bering"
 __license__ = "GPL3"
 __status__ = "Development"
 
-varDef = re.compile("(\S+)\s*=\s*(\S+)")
-varUsage = re.compile(":\s*([\"\']\{(\S+)\}[\"\'])\s*;\s*$")
+varDef = re.compile(r"(\S+)\s*=\s*(\S+)")
+varUsage = re.compile(r":\s*([\"\']{(\S+)\}[\"\'])\s*;\s*$")
 
-startDefBlock = re.compile("/\*\*\s*\{variables\}", flags=re.IGNORECASE)  # @UndefinedVariable
+startDefBlock = re.compile(r"/\*\*\s*{variables\}", flags=re.IGNORECASE)  # @UndefinedVariable
 
 
 def varredCss2Css(varredCssIter):
