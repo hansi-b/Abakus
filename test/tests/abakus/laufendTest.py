@@ -3,8 +3,9 @@ from datetime import date
 from decimal import Decimal
 
 from abakus import laufend
-from abakus.model import Stelle, AllGuS
 from abakus.laufend import Summierer
+from abakus.model import Stelle, AllGuS, Gehalt
+from tests.abakus.modelTest import TestMitGehältern
 
 
 class MonatsListeTest(unittest.TestCase):
@@ -49,26 +50,36 @@ class MonatsListeTest(unittest.TestCase):
             self.fail("Expected AssertionError")
 
 
-class SummiererCalcSonderzahlungTest(unittest.TestCase):
+trivialCalc = Summierer(None).calcSonderzahlung
+
+
+class SummiererCalcSonderzahlungTest(TestMitGehältern):
 
     def testNotNovember(self):
-        summi = Summierer(None)
-        lCalc = summi.calcSonderzahlung
 
         for m in range(1, 13):
             if m == 11:
                 continue
-            self.assertIsNone(lCalc(date(2019, m, 1), date(2022, 12, 1), None))
+            self.assertIsNone(trivialCalc(date(2019, m, 1), date(2022, 12, 1), None))
 
     def testNovemberButNoDezember(self):
-        summi = Summierer(None)
-        lCalc = summi.calcSonderzahlung
-        self.assertEqual(Decimal(0.), lCalc(date(2019, 11, 1), date(2019, 11, 30), None))
+        self.assertEqual(Decimal(0.), trivialCalc(date(2019, 11, 1), date(2019, 11, 30), None))
 
     def testNovemberAndDezember(self):
-        summi = Summierer(None)
-        lCalc = summi.calcSonderzahlung
-        self.assertEqual(Decimal(1.), lCalc(date(2019, 11, 1), date(2020, 1, 1), None))
+        self.givenGehalt(2019, AllGuS.E10_3, Gehalt.by(4., 7.))
+        lCalc = Summierer(self.ötv()).calcSonderzahlung
+
+        vorgeschichte = [(date(2019, 10, 1), Stelle(AllGuS.E10_3, date(2019, 1, 1)))]
+
+        self.assertEqual(Decimal(7.), lCalc(date(2019, 11, 1), date(2020, 1, 1), vorgeschichte))
+
+    def testE10MitVorgeschichte(self):
+        self.givenGehalt(2019, AllGuS.E10_3, Gehalt.by(4., 6.))
+        lCalc = Summierer(self.ötv()).calcSonderzahlung
+
+        vorgeschichte = [(date(2019, 10, 1), Stelle(AllGuS.E10_3, date(2019, 1, 1)))]
+
+        self.assertEqual(Decimal(6.), lCalc(date(2019, 11, 1), date(2020, 1, 1), vorgeschichte))
 
 
 if __name__ == "__main__":

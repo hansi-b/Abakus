@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 from typing import List, Tuple, Union
 
-from abakus.model import Stelle, GuS, dec
+from abakus.model import Stelle, GuS, dec, ÖtvKosten
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -60,19 +60,19 @@ def monatsListe(stelle: Stelle, von: date, bis: date) -> List[Tuple[date, Stelle
 class MonatsKosten:
     stichtag: date
     gus: GuS
-    umfang: Decimal
+    umfang: int
     kosten: Decimal
     sonderzahlung: Decimal
 
 
 class Summierer:
 
-    def __init__(self, ötv):
+    def __init__(self, ötv: ÖtvKosten):
         self.ötv = ötv
 
     def calc(self, stelle: Stelle, von: date, bis: date, umfang: int) -> Tuple[Decimal, List[MonatsKosten]]:
         """
-        :param umfang: a positive int up to including 100, indicating the percentage of work
+        :param umfang: a positive integer up to including 100, indicating the percentage of work
         """
 
         total, details = Decimal(0), []
@@ -86,12 +86,13 @@ class Summierer:
 
         return total, details
 
-    def calcSonderzahlung(self, stichtag: date, bis: date, vorgeschichte: List[Tuple[date, Stelle]]) -> Union[None, Decimal]:
+    def calcSonderzahlung(self, stichtag: date, bis: date, vorgeschichte: List[Tuple[date, Stelle]]) -> Union[
+        None, Decimal]:
         """
         Calculate the Jahressonderzahlung according to
         https://oeffentlicher-dienst.info/tv-l/allg/jahressonderzahlung.html
         
-        :return: None if Sonderzahlung does not apply (not November),
+        :return: None if Sonderzahlung does not apply (i.e., Stichtag is not November),
                     or a Decimal denoting the Sonderzahlung
         """
         # if not Nov, nothing to do here
@@ -100,10 +101,27 @@ class Summierer:
         # if end date is before Dez, it's zero
         if bis < date(stichtag.year, 12, 1):
             return Decimal(0.)
-    
+
         # default case: average over past
-    
-        return Decimal(1.)
+        if len(vorgeschichte) == 0:
+            raise Exception("Cannot compute Sonderzahlung without Vorgeschichte")
+
+        baseStellen = [None, None, None]
+        for refTag, gültigeStelle in reversed(vorgeschichte):
+            # Jul+Aug+Sep are the default base months
+            for mIndx, mth in enumerate((7, 8, 9)):
+                if not baseStellen[mIndx] and refTag < date(stichtag.year, mth + 1, 1):
+                    baseStellen[mIndx] = gültigeStelle
+            if all(baseStellen):
+                break
+
+        # falls es keine Bases gab, dann gilt das letzte Gehalt
+        if not any(baseStellen):
+            baseStellen[2] = vorgeschichte[-1][1]
+
+        gehälter = (self.ötv.gehälter[(stichtag.year, stelle.gus)] for stelle in baseStellen if stelle)
+        sonderzahls = [g.sonderzahlung for g in gehälter]
+        return sum(sonderzahls) / len(sonderzahls)
 
 
 if __name__ == '__main__':
