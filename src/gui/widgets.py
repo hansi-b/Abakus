@@ -1,4 +1,4 @@
-from PySide2 import  QtWidgets as qw
+from PySide2 import QtWidgets as qw
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"

@@ -1,4 +1,5 @@
 from abakus import model
+
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
 __license__ = "GPL3"
@@ -51,9 +52,9 @@ def iterGehälter(excel, gruppe):
     """
         Parse eine Excel-Tabelle hinsichtlich der Kosteninformationen.
     """
-        
+
     aktJahr, aktStufen, aktBrutto, aktSonder = None, None, None, None
-        
+
     for row in excel.itertuples():
         cellStr = str(row[1])
         if cellStr.startswith("Hilfstabelle"):
@@ -63,30 +64,35 @@ def iterGehälter(excel, gruppe):
         jahr = isGehaltBlockStart(cellStr)
         if jahr:
             if aktJahr:
-                logging.warning("Unerwartete weitere Jahresangabe {} gefunden, ignoriere vorige {}".format(jahr, aktJahr))
+                logging.warning(
+                    "Unerwartete weitere Jahresangabe {} gefunden, ignoriere vorige {}".format(jahr, aktJahr))
             aktJahr = jahr
             continue
-        
+
         stufen = isEntgeltgruppenZeile(row)
         if stufen:
             if len(stufen) != len(Stufe):
-                logging.error("Es wurden {} Stufen erwartet, aber {} ausgelesen: {}".format(len(Stufe), len(stufen), stufen))
+                logging.error(
+                    "Es wurden {} Stufen erwartet, aber {} ausgelesen: {}".format(len(Stufe), len(stufen), stufen))
             if aktStufen:
-                logging.warning("Unerwartete weitere Stufenzeile {} gefunden, ignoriere vorige {}".format(stufen, aktStufen))
+                logging.warning(
+                    "Unerwartete weitere Stufenzeile {} gefunden, ignoriere vorige {}".format(stufen, aktStufen))
             aktStufen = stufen
             continue
-        
+
         brutto = isArbeitnehmerBrutto(row)
         if brutto:
             if aktBrutto:
-                logging.warning("Unerwartete weitere Gehaltszeile {} gefunden, ignoriere vorige {}".format(brutto, aktBrutto))
+                logging.warning(
+                    "Unerwartete weitere Gehaltszeile {} gefunden, ignoriere vorige {}".format(brutto, aktBrutto))
             aktBrutto = brutto
             continue
-        
+
         sonder = isJahressonderzahlung(row)
         if sonder:
             if aktSonder:
-                logging.warning("Unerwartete weitere Gehaltszeile {} gefunden, ignoriere vorige {}".format(aktSonder, sonder))
+                logging.warning(
+                    "Unerwartete weitere Gehaltszeile {} gefunden, ignoriere vorige {}".format(aktSonder, sonder))
             aktSonder = sonder
 
             for stufe, brutto, sonder in zip(aktStufen, aktBrutto, aktSonder):
@@ -98,16 +104,16 @@ def iterGehälter(excel, gruppe):
 def createÖtv():
     gehälter = {}
     for excelName, sheetName in (("E10 Personalkosten 2019-2021.xlsx", "E10"),
-                                ("E13 Personalkosten 2019-2021.xlsx", "E13")):
+                                 ("E13 Personalkosten 2019-2021.xlsx", "E13")):
         gruppe = Entgeltgruppe[sheetName.replace("E", "E_")]
         excelDf = pd.read_excel(resource(excelName),
-                         sheet_name=sheetName, engine="xlrd")
+                                sheet_name=sheetName, engine="xlrd")
         for key, value in iterGehälter(excelDf, gruppe):
             gehälter[key] = value
 
     return ÖtvKosten(gehälter)
 
-    
+
 if __name__ == '__main__':
     ötv = createÖtv()
     for k, v in ötv.gehälter.items():

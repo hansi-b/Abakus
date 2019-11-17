@@ -4,6 +4,7 @@ __license__ = "GPL3"
 __status__ = "Development"
 
 import unittest
+
 from gui.cssVars import varredCss2Css
 
 
@@ -20,14 +21,14 @@ class Test(unittest.TestCase):
             "x=1",
             "*/",
             "a:'{x}';"
-            ]
+        ]
         result = [
             "/** {Variables}",
             "x=1",
             "*/",
             "a:1;"
-            ]
-        
+        ]
+
         self.assertEquals(result,
                           list(varredCss2Css(varred)))
 

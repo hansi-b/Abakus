@@ -72,7 +72,7 @@ class KostenBerechnungTest(TestMitGehältern):
     def testSummeMonatlich(self):
         self.givenGehalt(2012, AllGuS.E10_3, Gehalt.by(4., 7.))
         self.assertAlmostEqual(Decimal(4. * 1.3),
-                                self.ötv().summeMonatlich(2012, AllGuS.E10_3))
+                               self.ötv().summeMonatlich(2012, AllGuS.E10_3))
 
     def testSonderzahlung(self):
         self.givenGehalt(2012, AllGuS.E10_3, Gehalt(4., 7.2))

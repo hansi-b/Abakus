@@ -1,5 +1,5 @@
-import re
 import pathlib
+import re
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -27,7 +27,7 @@ def varredCss2Css(varredCssIter):
         :return: a generator over css lines with variable replaced
     """
     variables = {}
-        
+
     inDefBlock = False
     for lNo, rawLine in enumerate(varredCssIter):
         line = rawLine.strip()
@@ -44,7 +44,7 @@ def varredCss2Css(varredCssIter):
                 varName = varMatch.group(1)
                 if varName in variables:
                     raise ValueError("Duplicate definition for '{}' in line {}: {}".format(varName, lNo + 1, line))
-                variables[varName] = varMatch.group(2)        
+                variables[varName] = varMatch.group(2)
         elif startDefBlock.match(line):
             inDefBlock = True
         else:
@@ -62,7 +62,7 @@ def varredCss2Css(varredCssIter):
 
 
 if __name__ == '__main__':
-    
+
     varsCssPath = (pathlib.Path(__file__).parent / "../../resources/stylesheet.vars.css").resolve()
     print(varsCssPath)
     with varsCssPath.open() as cssIn:
