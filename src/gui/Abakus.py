@@ -227,15 +227,17 @@ class Details(qw.QWidget):
     def addDetail(self, mk: MonatsKosten):
         self.table.insertRow(self.table.rowCount())
         row = self.table.rowCount() - 1
-        self.__setItem(row, 0, "{} {}".format(monthNames[mk.stichtag.month - 1], mk.stichtag.year))
+        self.__setItem(row, 0, "{} {}".format(monthNames[mk.stichtag.month - 1], mk.stichtag.year),
+                       align=Qt.AlignRight)
         self.__setItem(row, 1, "{}".format(mk.gus.gruppe.name.replace("_", " ")))
         self.__setItem(row, 2, "{}".format(mk.gus.stufe.value))
         self.__setItem(row, 3, "{}".format(mk.umfang))
-        self.__setItem(row, 4, "{0:n}".format(mk.kosten))
+        self.__setItem(row, 4, "{0:n}".format(mk.kosten + mk.sonderzahlung),
+                       align=Qt.AlignRight)
 
-    def __setItem(self, row, col, content):
+    def __setItem(self, row, col, content, align=Qt.AlignCenter):
         item = qw.QTableWidgetItem(content)
-        item.setTextAlignment(Qt.AlignCenter)
+        item.setTextAlignment(align)
         self.table.setItem(row, col, item)
 
 

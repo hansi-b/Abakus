@@ -81,7 +81,7 @@ class Summierer:
         for i, (stichtag, aktStelle) in enumerate(stellePerMonat):
             kosten = dec(umfangFaktor * self.ötv.summeMonatlich(stichtag.year, aktStelle.gus))
             sonderzahlung = self.calcSonderzahlung(stichtag, bis, stellePerMonat[:i])
-            details.append(MonatsKosten(stichtag, aktStelle.gus, umfang, kosten, sonderzahlung))
+            details.append(MonatsKosten(stichtag, aktStelle.gus, umfang, kosten, sonderzahlung or Decimal(0.)))
             total += kosten
 
         return total, details
