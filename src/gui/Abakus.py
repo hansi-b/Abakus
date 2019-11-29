@@ -306,12 +306,24 @@ class Abakus(qw.QWidget):
         self.summe.total.setText("{0:n} €".format(summe))
 
 
+__RESOURCES_ROOT__ = None
+
+
 def resourcePath(resPath):
-    targetPath = pathlib.Path(__file__).parent / "../../resources" / resPath
-    targetPath = targetPath.resolve()
-    if not targetPath.exists():
-        logging.error("Ressource '{}' wurde nicht gefunden (gesucht in '{}')".format(resPath, targetPath))
-    return str(targetPath)
+    global __RESOURCES_ROOT__
+    if __RESOURCES_ROOT__ is None:
+        curr = pathlib.Path(__file__).parent
+        for depth in (0, 2):
+            __RESOURCES_ROOT__ = curr / "{}resources".format(depth * "../")
+            if __RESOURCES_ROOT__.is_dir():
+                break
+        else:
+            raise AssertionError("Ressourcen konnten von '{}' aus nicht gefunden werden".format(curr))
+        
+    fullPath = (__RESOURCES_ROOT__ / resPath).resolve()
+    if not fullPath.exists():
+        logging.error("Ressource '{}' wurde nicht gefunden (gesucht in '{}')".format(resPath, fullPath))
+    return str(fullPath)
 
 
 class AbakusSettings():
@@ -343,7 +355,7 @@ def checkLicenseAgreement(appSettings):
     licenseBox.setTextFormat(Qt.TextFormat.RichText)
     licenseBox.setStyleSheet("QLabel{min-width: 20em;}");
 
-    with open(resourcePath("README.html"), 'r') as lFile:
+    with open(resourcePath("README.html"), 'rt', encoding="utf-8") as lFile:
         licenseText = lFile.read()
     licenseBox.setText(licenseText)
     licenseBox.addButton(qw.QMessageBox.No)
