@@ -1,19 +1,19 @@
 import csv
 import datetime
 import io
-import logging
-import pathlib
 import sys
 
 from PySide2 import QtWidgets as qw
 from PySide2.QtCore import QDate, QLocale, Qt, QSettings
 from PySide2.QtGui import QFontDatabase, QIcon, QKeySequence, QGuiApplication
 
-from abakus import excel
-from abakus.laufend import Summierer, MonatsKosten
-from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
 from gui.cssVars import varredCss2Css
 from gui.widgets import EnumCombo, percentSpinner
+
+from abakus.laufend import Summierer, MonatsKosten
+from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
+from abakus.csvÖtv import ÖtvCsvParser, ÖtvFormatException
+from abakus import resources
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -165,7 +165,7 @@ class Einstellung(qw.QWidget):
 
         zeile.addWidget(qw.QLabel("Umfang"))
         self.umfang = percentSpinner()
-        zeile.addWidget(percentSpinner())
+        zeile.addWidget(self.umfang)
 
         zeile.addStretch(1)
         zeile.setContentsMargins(-1, 0, -1, 0)
@@ -270,7 +270,7 @@ class Abakus(qw.QWidget):
         super().__init__()
         self.setWindowTitle(ABAKUS)
 
-        self.settings = settings
+        self._settings = settings
         self.summierer = summierer
 
         layout = qw.QVBoxLayout()
@@ -295,7 +295,7 @@ class Abakus(qw.QWidget):
         gruppe = self.beschäftigung.gruppe.currentItem()
         stufe = self.weiterOderNeu.stufe.currentItem()
         umfang = self.beschäftigung.umfang.value()
-
+        
         vonDate = qDate2date(self.beschäftigung.vonPicker.date())
         stufenStart = qDate2date(self.weiterOderNeu.seit()) if self.weiterOderNeu.istWeiter() else vonDate
 
@@ -305,45 +305,25 @@ class Abakus(qw.QWidget):
             self.details.addDetail(monatsKosten)
         self.summe.total.setText("{0:n} €".format(summe))
 
-
-__RESOURCES_ROOT__ = None
-
-
-def resourcePath(resPath):
-    global __RESOURCES_ROOT__
-    if __RESOURCES_ROOT__ is None:
-        curr = pathlib.Path(__file__).parent
-        for depth in (0, 2):
-            __RESOURCES_ROOT__ = curr / "{}resources".format(depth * "../")
-            if __RESOURCES_ROOT__.is_dir():
-                break
-        else:
-            raise AssertionError("Ressourcen konnten von '{}' aus nicht gefunden werden".format(curr))
-        
-    fullPath = (__RESOURCES_ROOT__ / resPath).resolve()
-    if not fullPath.exists():
-        logging.error("Ressource '{}' wurde nicht gefunden (gesucht in '{}')".format(resPath, fullPath))
-    return str(fullPath)
-
-
+    
 class AbakusSettings():
 
     def __init__(self):
-        self.settings = QSettings("HansB", ABAKUS)
+        self._settings = QSettings("HansB", ABAKUS)
 
-    def val(self, key, defVal=None):
-        return self.settings.value("{}/{}".format(ABAKUS, key), defVal)
+    def _val(self, key, defVal=None):
+        return self._settings.value("{}/{}".format(ABAKUS, key), defVal)
 
-    def setVal(self, key, val):
-        self.settings.setValue("{}/{}".format(ABAKUS, key), val)
+    def _setVal(self, key, val):
+        self._settings.setValue("{}/{}".format(ABAKUS, key), val)
 
     def isShownLicense(self):
         # Booleans are not properly stored/read, see
         # e.g., https://bugreports.qt.io/browse/PYSIDE-820
-        return self.val("isShownLicense", "false").lower() == "true"
+        return self._val("isShownLicense", "false").lower() == "true"
 
     def setIsShownLicense(self, shown):
-        self.setVal("isShownLicense", shown)
+        self._setVal("isShownLicense", shown)
 
 
 def checkLicenseAgreement(appSettings):
@@ -355,7 +335,7 @@ def checkLicenseAgreement(appSettings):
     licenseBox.setTextFormat(Qt.TextFormat.RichText)
     licenseBox.setStyleSheet("QLabel{min-width: 20em;}");
 
-    with open(resourcePath("README.html"), 'rt', encoding="utf-8") as lFile:
+    with open(resources.path("README.html"), 'rt', encoding="utf-8") as lFile:
         licenseText = lFile.read()
     licenseBox.setText(licenseText)
     licenseBox.addButton(qw.QMessageBox.No)
@@ -368,15 +348,26 @@ def checkLicenseAgreement(appSettings):
         sys.exit()
 
 
+def getÖtv():
+    try:
+        return resources.load("ötv.csv",
+                       ÖtvCsvParser().parse)
+    except ÖtvFormatException as ö:
+        for e in ö.errors:
+            print(e)
+
+
 if __name__ == "__main__":
-    fontPath = resourcePath("NotoSansDisplay-Regular.ttf")
-    iconPath = resourcePath("icon.svg")
-    varsCssPath = resourcePath("stylesheet.vars.css")
-    with open(varsCssPath, "r") as styleFile:
-        styleSheet = "\n".join(varredCss2Css(styleFile.readlines()))
+
+    # deal with resources early:
+    fontPath = resources.path("NotoSansDisplay-Regular.ttf")
+    iconPath = resources.path("icon.svg")
+    
+    styleSheet = resources.load("stylesheet.vars.css",
+                                lambda f:"\n".join(varredCss2Css(f.readlines())))
 
     settings = AbakusSettings()
-    rechner = Summierer(excel.createÖtv())
+    rechner = Summierer(getÖtv())
 
     QLocale.setDefault(QLocale(QLocale.German, QLocale.Germany))
     app = qw.QApplication([])

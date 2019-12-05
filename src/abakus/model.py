@@ -36,19 +36,13 @@ class Stufe(Enum):
                     letzterAufstieg.day)
 
 
-Dec100 = Decimal(100.)
-
-
 class Entgeltgruppe(Enum):
     """
         Definition der Entgeltgruppen, für die Gehaltsdaten vorliegen
         Sonderzahlung laut https://oeffentlicher-dienst.info/tv-l/allg/jahressonderzahlung.html
     """
-    E_10 = 10, 80
-    E_13 = 13, 50
-
-    def anteilig(self, gehalt: Decimal) -> Decimal:
-        return gehalt * self.value[1] / Dec100
+    E_10 = 10
+    E_13 = 13
 
 
 @dataclass(eq=True, frozen=True)
@@ -61,13 +55,13 @@ class Gehalt:
 
     @staticmethod
     def by(b: float, s: float):
-        return Gehalt(Decimal(b), Decimal(s))
+        return Gehalt(dec(b), dec(s))
 
 
 @dataclass(eq=True, frozen=True)
 class GuS:
     """
-        Entgeltgruppe, Stufe und Stufenanfangsdatum
+        Entgeltgruppe und Stufe
     """
     gruppe: Entgeltgruppe
     stufe: Stufe
@@ -80,6 +74,7 @@ class AllGuS:
     E10_4 = GuS(Entgeltgruppe.E_10, Stufe.vier)
     E10_5 = GuS(Entgeltgruppe.E_10, Stufe.fünf)
     E10_6 = GuS(Entgeltgruppe.E_10, Stufe.sechs)
+
     E13_1 = GuS(Entgeltgruppe.E_13, Stufe.eins)
     E13_2 = GuS(Entgeltgruppe.E_13, Stufe.zwei)
     E13_3 = GuS(Entgeltgruppe.E_13, Stufe.drei)
@@ -89,7 +84,7 @@ class AllGuS:
 
 
 def printAllGuS():
-    """ Create a copy and paste product of the static fields for GuS.
+    """ Create a copy-&-paste product of the static fields for GuS.
         Hacky help to set them in the code to avoid UnknownVariable
         when doing this dynamically with setattr.
     """
@@ -103,7 +98,7 @@ class Stelle:
     gus: GuS
     beginn: date
 
-    def am(self, datum: date) -> Stelle:
+    def am(self, datum: date) -> Stelle:  # @UndefinedVariable
         """
             :param datum: das Datum, für das die dann gültige Stelle ermittelt werden soll
             :return: entweder diese Stelle, falls es keine Veränderung zum Argumentdatum
@@ -121,21 +116,32 @@ class Stelle:
         return self if neueStufe == self.gus.stufe else Stelle(GuS(self.gus.gruppe, neueStufe), neuesSeit)
 
 
-def dec(euros):
+def dec(euros:float):
     return Decimal(euros).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
 
 
 class ÖtvKosten:
+    
     """
     ein fixer Prozentsatz, der als Kostenzuschlag genommen wird
     """
     arbeitgeberKostenZuschlag = 0.3
 
+    # Mapping von Jahr + GuS nach Gehalt
     gehälter: Mapping[Tuple[int, GuS], Gehalt]
 
-    def __init__(self, gehälter):
-        self.gehälter = gehälter
+    def __init__(self):
+        self.gehälter = {}
         self.zuschlag = Decimal(1. + ÖtvKosten.arbeitgeberKostenZuschlag)
+
+    def mitGehalt(self, jahr: int, gus: GuS, gehalt: Gehalt):
+        """
+            Setzt für das gegebene Jahr und die gegebene Gruppe und Stufe das gegebene Gehalt fest.
+            :raise AssertionError: falls für Jahr, Gruppe und Stufe schon ein Gehalt gesetzt ist
+        """
+        key = (jahr, gus)
+        assert key not in self.gehälter, "Gehalt für {} in {} schon gesetzt (ist {})".format(jahr, gus, self.gehälter[key])
+        self.gehälter[key] = gehalt
 
     def summeMonatlich(self, jahr: int, gus: GuS):
         """

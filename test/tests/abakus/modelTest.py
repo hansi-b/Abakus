@@ -48,36 +48,23 @@ class DatierteGuSTest(unittest.TestCase):
 class TestMitGehältern(unittest.TestCase):
 
     def setUp(self):
-        self.gehälter = {}
+        self.ötv = ÖtvKosten()
 
     def tearDown(self):
-        del self.gehälter
-
-    def givenGehalt(self, jahr: int, gus: GuS, gehalt: Gehalt):
-        self.gehälter[(jahr, gus)] = gehalt
-
-    def ötv(self):
-        return ÖtvKosten(self.gehälter)
-
-
-class EntgeltGruppenTest(unittest.TestCase):
-
-    def testAnteilig(self):
-        self.assertAlmostEqual(Decimal(8.), Entgeltgruppe.E_10.anteilig(Decimal(10.)))
-        self.assertAlmostEqual(Decimal(5.), Entgeltgruppe.E_13.anteilig(Decimal(10.)))
+        del self.ötv
 
 
 class KostenBerechnungTest(TestMitGehältern):
 
     def testSummeMonatlich(self):
-        self.givenGehalt(2012, AllGuS.E10_3, Gehalt.by(4., 7.))
+        self.ötv.mitGehalt(2012, AllGuS.E10_3, Gehalt.by(4., 7.))
         self.assertAlmostEqual(Decimal(4. * 1.3),
-                               self.ötv().summeMonatlich(2012, AllGuS.E10_3))
+                               self.ötv.summeMonatlich(2012, AllGuS.E10_3))
 
     def testSonderzahlung(self):
-        self.givenGehalt(2012, AllGuS.E10_3, Gehalt(4., 7.2))
+        self.ötv.mitGehalt(2012, AllGuS.E10_3, Gehalt(4., 7.2))
 
-        self.assertEqual(7.2, self.ötv().sonderzahlung(2012, AllGuS.E10_3))
+        self.assertEqual(7.2, self.ötv.sonderzahlung(2012, AllGuS.E10_3))
 
 
 if __name__ == "__main__":
