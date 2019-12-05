@@ -36,7 +36,11 @@ class ÖtvCsvParser:
     expectedPartCount = 3 + 6
 
     def __init__(self):
-        locale.setlocale(locale.LC_ALL, 'de_DE.utf8')
+        try:
+            locale.setlocale(locale.LC_ALL, 'de_DE.utf8')
+        except Exception:
+            locale.setlocale(locale.LC_ALL, 'deu_deu')
+
         self._lNo = None
         self.errors = []
         self.ötv = ÖtvKosten()

@@ -13,7 +13,7 @@ def path(resPath):
     global __RESOURCES_ROOT
     if __RESOURCES_ROOT is None:
         curr = pathlib.Path(__file__).parent
-        for depth in (0, 2):
+        for depth in range(3):
             __RESOURCES_ROOT = curr / "{}resources".format(depth * "../")
             if __RESOURCES_ROOT.is_dir():
                 break
