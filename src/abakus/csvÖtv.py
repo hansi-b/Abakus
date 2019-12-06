@@ -1,5 +1,6 @@
-import locale
 from typing import Sequence
+from decimal import Decimal
+from babel.numbers import parse_decimal
 from abakus.model import ÖtvKosten, Entgeltgruppe, Gehalt, GuS, Stufe
 
 __author__ = "Hans Bering"
@@ -13,13 +14,13 @@ def asEntgeltgruppe(vStr):
 
 
 def asPerc(vStr):
-    v = locale.atof(vStr)
+    v = parse_decimal(vStr, locale="de")
     if v > 100 or 0 > v: raise ValueError
     return v
 
 
 def asGehalt(vStr):
-    v = locale.atof(vStr)
+    v = parse_decimal(vStr, locale="de")
     if v < 0 : raise ValueError
     return v
 
@@ -36,10 +37,6 @@ class ÖtvCsvParser:
     expectedPartCount = 3 + 6
 
     def __init__(self):
-        try:
-            locale.setlocale(locale.LC_ALL, 'de_DE.utf8')
-        except Exception:
-            locale.setlocale(locale.LC_ALL, 'deu_deu')
 
         self._lNo = None
         self.errors = []
@@ -92,7 +89,7 @@ class ÖtvCsvParser:
 
         if not all([year, gruppe, sonderProzent] + bruttos): raise ValueError
 
-        gehälter = [Gehalt.by(b, b * sonderProzent / 100.) for b in bruttos]
+        gehälter = [Gehalt.by(b, b * sonderProzent / Decimal(100.)) for b in bruttos]
         
         return year, gruppe, gehälter
         
