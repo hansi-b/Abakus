@@ -2,7 +2,7 @@ from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Optional
 
 from abakus.model import Stelle, GuS, dec, ÖtvKosten
 
