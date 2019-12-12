@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum
-from typing import Mapping, Tuple
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -127,11 +126,9 @@ class ÖtvKosten:
     """
     arbeitgeberKostenZuschlag = 0.3
 
-    # Mapping von Jahr + GuS nach Gehalt
-    gehälter: Mapping[Tuple[int, GuS], Gehalt]
-
     def __init__(self):
-        self.gehälter = {}
+        # Mapping[Tuple[int, GuS], Gehalt]
+        self.__gehälter = {}
         self.zuschlag = Decimal(1. + ÖtvKosten.arbeitgeberKostenZuschlag)
 
     def mitGehalt(self, jahr: int, gus: GuS, gehalt: Gehalt):
@@ -140,21 +137,33 @@ class ÖtvKosten:
             :raise AssertionError: falls für Jahr, Gruppe und Stufe schon ein Gehalt gesetzt ist
         """
         key = (jahr, gus)
-        assert key not in self.gehälter, "Gehalt für {} in {} schon gesetzt (ist {})".format(jahr, gus, self.gehälter[key])
-        self.gehälter[key] = gehalt
+        assert key not in self.__gehälter, "Gehalt für {} in {} schon gesetzt (ist {})".format(jahr, gus, self.__gehälter[key])
+        self.__gehälter[key] = gehalt
 
     def summeMonatlich(self, jahr: int, gus: GuS):
         """
             :return: die monatlichen Gesamtkosten mit Arbeitgeberzuschlag,
                     aber ohne Jahressonderzahlung
         """
-        return dec(self.gehälter[(jahr, gus)].brutto * self.zuschlag)
+        return dec(self.__gehalt(jahr, gus).brutto * self.zuschlag)
 
     def sonderzahlung(self, jahr: int, gus: GuS):
         """
             :return: die Jahressonderzahlung
         """
-        return self.gehälter[(jahr, gus)].sonderzahlung
+        return dec(self.__gehalt(jahr, gus).sonderzahlung * self.zuschlag)
+
+    def __gehalt(self, jahr: int, gus: GuS):
+        """
+            Look up the wanted Gehalt, with a fallback for the last year in which we have data.
+        """
+        key = (jahr, gus)
+        if not key in self.__gehälter:
+            mögliche = [(j, g) for j, g in self.__gehälter.keys() if g == gus]
+            if not mögliche:
+                raise AssertionError("Keine Gehaltsdaten für {} verfügbar".format(gus))
+            key = max(mögliche)
+        return self.__gehälter[key]
 
 
 if __name__ == "__main__":

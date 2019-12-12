@@ -2,7 +2,7 @@ from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 from abakus.model import Stelle, GuS, dec, ÖtvKosten
 
@@ -75,9 +75,10 @@ class Summierer:
         :param umfang: a positive integer up to including 100, indicating the percentage of work
         """
 
-        total, details = Decimal(0), []
         stellePerMonat = monatsListe(stelle, von, bis)
         umfangFaktor = Decimal(umfang / 100.)
+
+        total, details = Decimal(0), []
         for i, (stichtag, aktStelle) in enumerate(stellePerMonat):
             kosten = dec(umfangFaktor * self.ötv.summeMonatlich(stichtag.year, aktStelle.gus))
             sonderzahlung = self.calcSonderzahlung(stichtag, bis, stellePerMonat[:i])
@@ -86,8 +87,7 @@ class Summierer:
 
         return total, details
 
-    def calcSonderzahlung(self, stichtag: date, bis: date, vorgeschichte: List[Tuple[date, Stelle]]) -> Union[
-        None, Decimal]:
+    def calcSonderzahlung(self, stichtag: date, bis: date, vorgeschichte: List[Tuple[date, Stelle]]) -> Optional[Decimal]:
         """
         Calculate the Jahressonderzahlung according to
         https://oeffentlicher-dienst.info/tv-l/allg/jahressonderzahlung.html
@@ -119,8 +119,8 @@ class Summierer:
         if not any(baseStellen):
             baseStellen[2] = vorgeschichte[-1][1]
 
-        gehälter = (self.ötv.gehälter[(stichtag.year, stelle.gus)] for stelle in baseStellen if stelle)
-        sonderzahls = [g.sonderzahlung for g in gehälter]
+        sonderzahls = [self.ötv.sonderzahlung(stichtag.year, stelle.gus) for stelle in baseStellen if stelle]
+        # print(sonderzahls)
         return sum(sonderzahls) / len(sonderzahls)
 
 
