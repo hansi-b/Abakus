@@ -101,9 +101,9 @@ if __name__ == '__main__':
     from abakus import resources
     try:
         with open(resources.path("ötv.csv")) as csvFile:
-            ö = ÖtvCsvParser().parse(csvFile)
+            ÖtvCsvParser().parse(csvFile)
     except ÖtvFormatException as ö:
         for e in ö.errors:
             print(e)
-    for k, v in ö.gehälter.items():
-        print("{}\t{}".format(k, v))
+    else:
+        print("ok!")
