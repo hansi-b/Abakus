@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from abakus import laufend
 from abakus.laufend import Summierer
-from abakus.model import Stelle, AllGuS, Gehalt
+from abakus.model import Stelle, AllGuS
 from tests.abakus.modelTest import TestMitGehältern
 
 
@@ -66,16 +66,16 @@ class SummiererCalcSonderzahlungTest(TestMitGehältern):
         self.assertEqual(Decimal(0.), trivialCalc(date(2019, 11, 1), date(2019, 11, 30), None))
 
     def testNovemberAndDezember(self):
-        self.givenGehalt(2019, AllGuS.E10_3, Gehalt.by(4., 7.))
-        lCalc = Summierer(self.ötv()).calcSonderzahlung
+        self.givenGehalt(2019, AllGuS.E10_3, 7., 4.)
+        lCalc = Summierer(self.ötv).calcSonderzahlung
 
         vorgeschichte = [(date(2019, 10, 1), Stelle(AllGuS.E10_3, date(2019, 1, 1)))]
 
         self.assertEqual(Decimal(7.), lCalc(date(2019, 11, 1), date(2020, 1, 1), vorgeschichte))
 
     def testE10MitVorgeschichte(self):
-        self.givenGehalt(2019, AllGuS.E10_3, Gehalt.by(4., 6.))
-        lCalc = Summierer(self.ötv()).calcSonderzahlung
+        self.givenGehalt(2019, AllGuS.E10_3, 6., 4.)
+        lCalc = Summierer(self.ötv).calcSonderzahlung
 
         vorgeschichte = [(date(2019, 10, 1), Stelle(AllGuS.E10_3, date(2019, 1, 1)))]
 

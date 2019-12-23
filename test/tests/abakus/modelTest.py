@@ -1,9 +1,7 @@
 import unittest
 from datetime import date
-from decimal import Decimal
 
-from abakus.model import Gehalt, GuS, \
-    Stufe, ÖtvKosten, Stelle, AllGuS, Entgeltgruppe
+from abakus.model import GuS, Stufe, ÖtvKosten, Stelle, AllGuS, Gehälter, dec
 
 
 class StufenTest(unittest.TestCase):
@@ -52,19 +50,19 @@ class TestMitGehältern(unittest.TestCase):
 
     def tearDown(self):
         del self.ötv
+    
+    def givenGehalt(self, jahr: int, gus: GuS, sonderProzent, brutto):
+        self.ötv.mitGehalt(jahr, gus.gruppe, Gehälter(dec(sonderProzent),
+                                                      {gus.stufe : dec(brutto)}))
 
 
 class KostenBerechnungTest(TestMitGehältern):
 
     def testSummeMonatlich(self):
-        self.ötv.mitGehalt(2012, AllGuS.E10_3, Gehalt.by(4., 7.))
-        self.assertAlmostEqual(Decimal(4. * 1.3),
-                               self.ötv.summeMonatlich(2012, AllGuS.E10_3))
-
-    def testSonderzahlung(self):
-        self.ötv.mitGehalt(2012, AllGuS.E10_3, Gehalt(4., 7.2))
-
-        self.assertEqual(7.2, self.ötv.sonderzahlung(2012, AllGuS.E10_3))
+        self.givenGehalt(2012, AllGuS.E10_3, 4., 7.)
+        self.assertAlmostEqual(dec(7. * 1.3),
+                               self.ötv.monatsGesamt(2012, AllGuS.E10_3))
+        self.assertAlmostEqual(4., self.ötv.sonderZahlProzent(2012, AllGuS.E10_3))
 
 
 if __name__ == "__main__":

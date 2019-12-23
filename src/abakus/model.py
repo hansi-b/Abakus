@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum
+from typing import Mapping
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -42,20 +43,7 @@ class Entgeltgruppe(Enum):
     """
     E_10 = 10
     E_13 = 13
-
-
-@dataclass(eq=True, frozen=True)
-class Gehalt:
-    """
-        Monatliche Gehaltsdaten: Bruttogehalt (ohne Arbeitgeberzuschlag) und Sonderzahlung.
-    """
-    brutto: Decimal
-    sonderzahlung: Decimal
-
-    @staticmethod
-    def by(b: float, s: float):
-        return Gehalt(dec(b), dec(s))
-
+    
 
 @dataclass(eq=True, frozen=True)
 class GuS:
@@ -119,6 +107,12 @@ def dec(euros:float):
     return Decimal(euros).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
 
 
+@dataclass(eq=True, frozen=True)
+class Gehälter:
+    sonderZahlProzent: Decimal
+    bruttoByStufe: Mapping[Stufe, Decimal]
+
+
 class ÖtvKosten:
     
     """
@@ -127,41 +121,41 @@ class ÖtvKosten:
     arbeitgeberKostenZuschlag = 0.3
 
     def __init__(self):
-        # Mapping[Tuple[int, GuS], Gehalt]
+        # Mapping[Tuple[int, Entgeltgruppe], Gehälter]
         self.__gehälter = {}
         self.zuschlag = Decimal(1. + ÖtvKosten.arbeitgeberKostenZuschlag)
 
-    def mitGehalt(self, jahr: int, gus: GuS, gehalt: Gehalt):
+    def mitGehalt(self, jahr: int, gruppe : Entgeltgruppe, gehälter : Gehälter):
         """
             Setzt für das gegebene Jahr und die gegebene Gruppe und Stufe das gegebene Gehalt fest.
             :raise AssertionError: falls für Jahr, Gruppe und Stufe schon ein Gehalt gesetzt ist
         """
-        key = (jahr, gus)
-        assert key not in self.__gehälter, "Gehalt für {} in {} schon gesetzt (ist {})".format(jahr, gus, self.__gehälter[key])
-        self.__gehälter[key] = gehalt
+        key = (jahr, gruppe)
+        assert key not in self.__gehälter, "Gehalt für {} in {} schon gesetzt (ist {})".format(jahr, gruppe, self.__gehälter[key])
+        self.__gehälter[key] = gehälter
 
-    def summeMonatlich(self, jahr: int, gus: GuS):
+    def monatsGesamt(self, jahr: int, gus: GuS):
         """
             :return: die monatlichen Gesamtkosten mit Arbeitgeberzuschlag,
                     aber ohne Jahressonderzahlung
         """
-        return dec(self.__gehalt(jahr, gus).brutto * self.zuschlag)
+        return dec(self.__getGehälter(jahr, gus.gruppe).bruttoByStufe[gus.stufe] * self.zuschlag)
 
-    def sonderzahlung(self, jahr: int, gus: GuS):
+    def sonderZahlProzent(self, jahr: int, gus: GuS):
         """
-            :return: die Jahressonderzahlung
+            :return: die Jahressonderzahlung in Prozent
         """
-        return dec(self.__gehalt(jahr, gus).sonderzahlung * self.zuschlag)
+        return self.__getGehälter(jahr, gus.gruppe).sonderZahlProzent
 
-    def __gehalt(self, jahr: int, gus: GuS):
+    def __getGehälter(self, jahr: int, gruppe : Entgeltgruppe) -> Gehälter:
         """
-            Look up the wanted Gehalt, with a fallback for the last year in which we have data.
+            Look up the wanted Gehälter, with a fallback for the last year in which we have data.
         """
-        key = (jahr, gus)
+        key = (jahr, gruppe)
         if not key in self.__gehälter:
-            mögliche = [(j, g) for j, g in self.__gehälter.keys() if g == gus]
+            mögliche = [(j, g) for j, g in self.__gehälter.keys() if g == gruppe]
             if not mögliche:
-                raise AssertionError("Keine Gehaltsdaten für {} verfügbar".format(gus))
+                raise AssertionError("Keine Gehaltsdaten für {} verfügbar".format(gruppe))
             key = max(mögliche)
         return self.__gehälter[key]
 

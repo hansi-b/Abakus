@@ -1,7 +1,6 @@
 from typing import Sequence
-from decimal import Decimal
 from babel.numbers import parse_decimal
-from abakus.model import ÖtvKosten, Entgeltgruppe, Gehalt, GuS, Stufe
+from abakus.model import ÖtvKosten, Entgeltgruppe, dec, Stufe, Gehälter
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -22,7 +21,7 @@ def asPerc(vStr):
 def asGehalt(vStr):
     v = parse_decimal(vStr, locale="de")
     if v < 0 : raise ValueError
-    return v
+    return dec(v)
 
 
 class ÖtvFormatException(Exception):
@@ -45,7 +44,7 @@ class ÖtvCsvParser:
     def parse(self, csvLines : Sequence[str]) -> ÖtvKosten:
         """
             Read ÖTV Tarife from a custom CSV format and add the
-            information to this ötv object
+            information to this ÖTV object
         """
 
         for lNo, rawLine in enumerate(csvLines, start=1):
@@ -60,11 +59,12 @@ class ÖtvCsvParser:
                 continue
             
             try :
-                year, gruppe, gehälter = self._parseParts(parts)
-                for gIdx, g in enumerate(gehälter, start=1):
-                    self.ötv.mitGehalt(year, GuS(gruppe, Stufe(gIdx)), g)
+                year, gruppe, sonderProzent, gehälter = self._parseParts(parts)
+                self.ötv.mitGehalt(year, gruppe, Gehälter(sonderProzent, gehälter))
             except ValueError:
                 continue
+            except AssertionError as asErr:
+                self._newErr("{}".format(asErr))
                     
         if len(self.errors):
             raise ÖtvFormatException(self.errors)
@@ -88,10 +88,10 @@ class ÖtvCsvParser:
         bruttos = [part2Val(p, asGehalt, "Ungültiges Bruttogehalt") for p in range(3, 9)]
 
         if not all([year, gruppe, sonderProzent] + bruttos): raise ValueError
-
-        gehälter = [Gehalt.by(b, b * sonderProzent / Decimal(100.)) for b in bruttos]
         
-        return year, gruppe, gehälter
+        gehälter = {Stufe(s): b for s, b in enumerate(bruttos, start=1)}
+        
+        return year, gruppe, sonderProzent, gehälter
         
     def _newErr(self, msg):
         self.errors.append("Zeile {}{}".format(self._lNo, msg))
