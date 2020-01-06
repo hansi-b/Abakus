@@ -63,23 +63,26 @@ class SummiererCalcSonderzahlungTest(TestMitGehältern):
             self.assertIsNone(trivialCalc(date(2019, m, 1), date(2022, 12, 1), None))
 
     def testNovemberButNoDezember(self):
-        self.assertEqual(Decimal(0.), trivialCalc(date(2019, 11, 1), date(2019, 11, 30), None))
+        self.assertEqual(Decimal(0.),
+                         trivialCalc(date(2019, 11, 1), date(2019, 11, 30), None))
 
     def testNovemberAndDezember(self):
-        self.givenGehalt(2019, AllGuS.E10_3, 7., 4.)
+        self.givenGehalt(2019, AllGuS.E10_3, 12., 75.)
         lCalc = Summierer(self.ötv).calcSonderzahlung
 
         vorgeschichte = [(date(2019, 10, 1), Stelle(AllGuS.E10_3, date(2019, 1, 1)))]
 
-        self.assertEqual(Decimal(7.), lCalc(date(2019, 11, 1), date(2020, 1, 1), vorgeschichte))
+        self.assertEqual(Decimal(9.),
+                         lCalc(date(2019, 11, 1), date(2020, 1, 1), vorgeschichte))
 
     def testE10MitVorgeschichte(self):
-        self.givenGehalt(2019, AllGuS.E10_3, 6., 4.)
+        self.givenGehalt(2019, AllGuS.E10_3, 6., 50.)
         lCalc = Summierer(self.ötv).calcSonderzahlung
 
-        vorgeschichte = [(date(2019, 10, 1), Stelle(AllGuS.E10_3, date(2019, 1, 1)))]
+        vorgeschichte = [(date(2019, 1, 1), Stelle(AllGuS.E10_3, date(2019, 1, 1)))]
 
-        self.assertEqual(Decimal(6.), lCalc(date(2019, 11, 1), date(2020, 1, 1), vorgeschichte))
+        self.assertEqual(Decimal(3.),
+                         lCalc(date(2019, 11, 1), date(2020, 1, 1), vorgeschichte))
 
 
 if __name__ == "__main__":

@@ -51,7 +51,7 @@ class TestMitGehältern(unittest.TestCase):
     def tearDown(self):
         del self.ötv
     
-    def givenGehalt(self, jahr: int, gus: GuS, sonderProzent, brutto):
+    def givenGehalt(self, jahr: int, gus: GuS, brutto, sonderProzent):
         self.ötv.mitGehalt(jahr, gus.gruppe, Gehälter(dec(sonderProzent),
                                                       {gus.stufe : dec(brutto)}))
 

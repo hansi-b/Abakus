@@ -80,10 +80,21 @@ def printAllGuS():
         print("    {}_{} = GuS(Entgeltgruppe.{}, Stufe.{})".format(e.name.replace("_", ""), s.value, e.name, s.name))
 
 
+def dec(euros:float):
+    return Decimal(euros).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+
+
+DEC_100 = dec(100)
+
+
 @dataclass(eq=True, frozen=True)
 class Stelle:
     gus: GuS
     beginn: date
+    umfangProzent: Decimal = DEC_100
+
+    def anteilig(self, zahl: Decimal):
+        return zahl * self.umfangProzent / DEC_100
 
     def am(self, datum: date) -> Stelle:  # @UndefinedVariable
         """
@@ -100,11 +111,8 @@ class Stelle:
             neueStufe = neueStufe.nächste()
             nächstesSeit = neueStufe.nächsterAufstieg(nächstesSeit)
 
-        return self if neueStufe == self.gus.stufe else Stelle(GuS(self.gus.gruppe, neueStufe), neuesSeit)
-
-
-def dec(euros:float):
-    return Decimal(euros).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+        return self if neueStufe == self.gus.stufe else Stelle(GuS(self.gus.gruppe, neueStufe),
+                                                               neuesSeit, self.umfangProzent)
 
 
 @dataclass(eq=True, frozen=True)

@@ -11,7 +11,7 @@ from gui.cssVars import varredCss2Css
 from gui.widgets import EnumCombo, percentSpinner
 
 from abakus.laufend import Summierer, MonatsKosten
-from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS
+from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS, dec
 from abakus.csvÖtv import ÖtvCsvParser, ÖtvFormatException
 from abakus import resources
 
@@ -232,7 +232,7 @@ class Details(qw.QWidget):
         self.__setItem(row, 1, "{}".format(mk.gus.gruppe.name.replace("_", " ")))
         self.__setItem(row, 2, "{}".format(mk.gus.stufe.value))
         self.__setItem(row, 3, "{}".format(mk.umfang))
-        self.__setItem(row, 4, "{0:n}".format(mk.kosten + mk.sonderzahlung),
+        self.__setItem(row, 4, "{0:n}".format(mk.kosten + mk.sonderZahlProzent),
                        align=Qt.AlignRight)
 
     def __setItem(self, row, col, content, align=Qt.AlignCenter):
@@ -294,12 +294,12 @@ class Abakus(qw.QWidget):
         bisDate = qDate2date(self.beschäftigung.bisPicker.date())
         gruppe = self.beschäftigung.gruppe.currentItem()
         stufe = self.weiterOderNeu.stufe.currentItem()
-        umfang = self.beschäftigung.umfang.value()
+        umfang = dec(self.beschäftigung.umfang.value())
         
         vonDate = qDate2date(self.beschäftigung.vonPicker.date())
         stufenStart = qDate2date(self.weiterOderNeu.seit()) if self.weiterOderNeu.istWeiter() else vonDate
 
-        summe, details = self.summierer.calc(Stelle(GuS(gruppe, stufe), stufenStart), vonDate, bisDate, umfang)
+        summe, details = self.summierer.calc(Stelle(GuS(gruppe, stufe), stufenStart, umfang), vonDate, bisDate)
         self.details.clear()
         for monatsKosten in details:
             self.details.addDetail(monatsKosten)

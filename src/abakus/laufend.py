@@ -62,7 +62,7 @@ class MonatsKosten:
     gus: GuS
     umfang: int
     kosten: Decimal
-    sonderzahlung: Decimal
+    sonderZahlProzent: Decimal
 
 
 class Summierer:
@@ -70,19 +70,23 @@ class Summierer:
     def __init__(self, ötv: ÖtvKosten):
         self.ötv = ötv
 
-    def calc(self, stelle: Stelle, von: date, bis: date, umfang: int) -> Tuple[Decimal, List[MonatsKosten]]:
+    def calc(self, stelle: Stelle, von: date, bis: date) -> Tuple[Decimal, List[MonatsKosten]]:
         """
         :param umfang: a positive integer up to including 100, indicating the percentage of work
         """
 
         stellePerMonat = monatsListe(stelle, von, bis)
-        umfangFaktor = Decimal(umfang / 100.)
 
         total, details = Decimal(0), []
-        for i, (stichtag, aktStelle) in enumerate(stellePerMonat):
-            kosten = dec(umfangFaktor * self.ötv.summeMonatlich(stichtag.year, aktStelle.gus))
+
+        monatsKosten = [aktStelle.anteilig(self.ötv.monatsGesamt(stichtag.year, aktStelle.gus))
+                        for stichtag, aktStelle in stellePerMonat]
+
+        for (i, (stichtag, aktStelle)), kosten in zip(enumerate(stellePerMonat), monatsKosten):
+
             sonderzahlung = self.calcSonderzahlung(stichtag, bis, stellePerMonat[:i])
-            details.append(MonatsKosten(stichtag, aktStelle.gus, umfang, kosten, sonderzahlung or Decimal(0.)))
+
+            details.append(MonatsKosten(stichtag, aktStelle.gus, aktStelle.umfangProzent, kosten, sonderzahlung or Decimal(0.)))
             total += kosten
 
         return total, details
@@ -119,7 +123,7 @@ class Summierer:
         if not any(baseStellen):
             baseStellen[2] = vorgeschichte[-1][1]
 
-        sonderzahls = [self.ötv.sonderzahlung(stichtag.year, stelle.gus) for stelle in baseStellen if stelle]
+        sonderzahls = [self.ötv.sonderZahlProzent(stichtag.year, stelle.gus) for stelle in baseStellen if stelle]
         # print(sonderzahls)
         return sum(sonderzahls) / len(sonderzahls)
 
