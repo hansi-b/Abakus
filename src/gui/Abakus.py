@@ -10,7 +10,7 @@ from PySide2.QtGui import QFontDatabase, QIcon, QKeySequence, QGuiApplication
 from gui.cssVars import varredCss2Css
 from gui.widgets import EnumCombo, percentSpinner
 
-from abakus.laufend import Summierer, MonatsKosten
+from abakus.laufend import Summierer, MonatsKosten, Anstellung
 from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS, dec
 from abakus.csvÖtv import ÖtvCsvParser, ÖtvFormatException
 from abakus import resources
@@ -229,10 +229,11 @@ class Details(qw.QWidget):
         row = self.table.rowCount() - 1
         self.__setItem(row, 0, "{} {}".format(monthNames[mk.stichtag.month - 1], mk.stichtag.year),
                        align=Qt.AlignRight)
-        self.__setItem(row, 1, "{}".format(mk.gus.gruppe.name.replace("_", " ")))
-        self.__setItem(row, 2, "{}".format(mk.gus.stufe.value))
-        self.__setItem(row, 3, "{}".format(mk.umfang))
-        self.__setItem(row, 4, "{0:n}".format(mk.kosten + mk.sonderZahlProzent),
+        gus = mk.stelle.gus
+        self.__setItem(row, 1, "{}".format(gus.gruppe.name.replace("_", " ")))
+        self.__setItem(row, 2, "{}".format(gus.stufe.value))
+        self.__setItem(row, 3, "{}".format(mk.stelle.umfangProzent))
+        self.__setItem(row, 4, "{0:n}".format(mk.kosten + mk.sonderzahlung),
                        align=Qt.AlignRight)
 
     def __setItem(self, row, col, content, align=Qt.AlignCenter):
@@ -299,7 +300,8 @@ class Abakus(qw.QWidget):
         vonDate = qDate2date(self.beschäftigung.vonPicker.date())
         stufenStart = qDate2date(self.weiterOderNeu.seit()) if self.weiterOderNeu.istWeiter() else vonDate
 
-        summe, details = self.summierer.calc(Stelle(GuS(gruppe, stufe), stufenStart, umfang), vonDate, bisDate)
+        anst = Anstellung(Stelle(GuS(gruppe, stufe), stufenStart, umfang), vonDate, bisDate)
+        summe, details = self.summierer.calc(anst)
         self.details.clear()
         for monatsKosten in details:
             self.details.addDetail(monatsKosten)

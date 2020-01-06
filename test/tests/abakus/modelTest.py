@@ -58,11 +58,19 @@ class TestMitGehältern(unittest.TestCase):
 
 class KostenBerechnungTest(TestMitGehältern):
 
-    def testSummeMonatlich(self):
-        self.givenGehalt(2012, AllGuS.E10_3, 4., 7.)
-        self.assertAlmostEqual(dec(7. * 1.3),
-                               self.ötv.monatsGesamt(2012, AllGuS.E10_3))
-        self.assertAlmostEqual(4., self.ötv.sonderZahlProzent(2012, AllGuS.E10_3))
+    def testBasicFactsMonatlich(self):
+        self.givenGehalt(2012, AllGuS.E10_3, 8., 75.)
+
+        self.assertAlmostEqual(dec(1.3 * 8.),
+                               self.ötv._monatsGesamt(2012, AllGuS.E10_3))
+        self.assertAlmostEqual(75., self.ötv._sonderZahlProzent(2012, AllGuS.E10_3))
+
+    def testGehaltAndSonderzahlungMonatlich(self):
+        self.givenGehalt(2012, AllGuS.E10_3, 8., 75.)
+        s = Stelle(AllGuS.E10_3, date(2012, 1, 1), dec(40.))
+        self.assertAlmostEqual(dec(1.3 * 8. * .4),
+                               self.ötv.monatsGesamt(2012, s))
+        self.assertAlmostEqual(dec(1.3 * 8. * .4 * .75), self.ötv.sonderzahlung(2012, s))
 
 
 if __name__ == "__main__":

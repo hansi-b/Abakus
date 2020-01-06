@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 from typing import List, Tuple, Optional
 
-from abakus.model import Stelle, GuS, dec, ÖtvKosten
+from abakus.model import Stelle, ÖtvKosten, dec
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -31,38 +31,79 @@ def lastDateInNextMonth(d: date):
     return lastDateInMonth(date(newY, newM, 1))
 
 
-def monatsListe(stelle: Stelle, von: date, bis: date) -> List[Tuple[date, Stelle]]:
-    """
-        Gibt pro Monatsende für den gegebenen Zeitraum (beides inklusive) die dann gültige Stelle zurück
-        als Paar (date, Stelle).
-
-        :param stelle: die Stelle, auf deren Grundlage gerechnet werden soll.
-                        Der Beginn der Stelle darf nicht nach dem "von" liegen.
-        :param von: das Datum, ab dem iteriert werden soll. Darf nicht vor dem Beginn der Stelle liegen.
-        :param bis: das Datum, bis zu dem iteriert werden soll. Im Moment wird nur der volle Monat berücksichtigt.
-        :return: eine Liste von Paaren (Stichtag, Stelle) mit den monatsletzten Tagen und der dann gültigen Stelle
-    """
-    assert stelle.beginn <= von, "Der Beginn der Stelle {} liegt nach dem Anfangsdatum {}".format(stelle, von);
-    assert von <= bis, "Das Anfangsdatum {} liegt nach dem Enddatum {}".format(von, bis)
-
-    currDate = lastDateInMonth(von)
-    currStelle = stelle
-
-    result = []
-    while currDate <= bis:
-        currStelle = currStelle.am(currDate)
-        result.append((currDate, currStelle))
-        currDate = lastDateInNextMonth(currDate)
-    return result
-
-
 @dataclass(eq=True, frozen=True)
 class MonatsKosten:
     stichtag: date
-    gus: GuS
-    umfang: int
+    stelle: Stelle
     kosten: Decimal
-    sonderZahlProzent: Decimal
+    sonderzahlung: Decimal
+
+
+class Anstellung:
+    """
+        Eine Geschichte von Stellen
+    """
+    
+    def __init__(self, stelle: Stelle, von: date, bis: date):
+        """
+            :param stelle: die Stelle, auf deren Grundlage gerechnet werden soll.
+                            Der Beginn der Stelle darf nicht nach dem "von" liegen.
+            :param von: das Datum, ab dem iteriert werden soll. Darf nicht vor dem Beginn der Stelle liegen.
+            :param bis: das Datum, bis zu dem iteriert werden soll. Im Moment wird nur der volle Monat berücksichtigt.
+        """
+        assert stelle.beginn <= von, "Der Beginn der Stelle {} liegt nach dem Anfangsdatum {}".format(stelle, von);
+        assert von <= bis, "Das Anfangsdatum {} liegt nach dem Enddatum {}".format(von, bis)
+
+        self.stelle = stelle
+        self.von = von
+        self.bis = bis
+        
+        self.monatsListe = self._initMonatsListe()
+
+    def _initMonatsListe(self) -> List[Tuple[date, Stelle]]:
+        """
+            Gibt pro Monatsende für den gegebenen Zeitraum (beides inklusive) die dann gültige Stelle zurück
+            als Paar (date, Stelle).
+
+            :return: eine Liste von Paaren (Stichtag, Stelle) mit den monatsletzten Tagen und der dann gültigen Stelle
+        """
+        currDate = lastDateInMonth(self.von)
+        currStelle = self.stelle
+    
+        result = []
+        while currDate <= self.bis:
+            currStelle = currStelle.am(currDate)
+            result.append((currDate, currStelle))
+            currDate = lastDateInNextMonth(currDate)
+        return result
+
+    def findBaseStellen(self, year: int) -> List[Stelle]:
+        """
+        :return: the Stellen which make up the Basis for the Sonderzahlung in the argument year
+        """
+        stellenImJahr = list(reversed([(t, s) for t, s in self.monatsListe if t.year == year and t.month < 12]))
+
+        # default case: average over past
+        if not stellenImJahr:
+            raise Exception("Cannot compute BaseStellen - no data for {}".format(year))
+        
+        baseStellen = [None, None, None]
+        for refTag, gültigeStelle in stellenImJahr:
+            # Jul+Aug+Sep are the default base months
+            for mIndx, mth in enumerate((7, 8, 9)):
+                if not baseStellen[mIndx] and refTag.month == mth:
+                    baseStellen[mIndx] = gültigeStelle
+            if all(baseStellen):
+                break
+
+        # falls es keine Bases gab, dann gilt das letzte Gehalt
+        if not any(baseStellen):
+            baseStellen[2] = stellenImJahr[-1][1]
+
+        return [s for s in baseStellen if s]
+
+    def __iter__(self):
+        return self.monatsListe.__iter__()
 
 
 class Summierer:
@@ -70,28 +111,20 @@ class Summierer:
     def __init__(self, ötv: ÖtvKosten):
         self.ötv = ötv
 
-    def calc(self, stelle: Stelle, von: date, bis: date) -> Tuple[Decimal, List[MonatsKosten]]:
-        """
-        :param umfang: a positive integer up to including 100, indicating the percentage of work
-        """
-
-        stellePerMonat = monatsListe(stelle, von, bis)
+    def calc(self, anstellung : Anstellung) -> Tuple[Decimal, List[MonatsKosten]]:
 
         total, details = Decimal(0), []
+        
+        for stichtag, stelle in anstellung:
+            kosten = self.ötv.monatsGesamt(stichtag.year, stelle)
+            sonderzahlung = self.calcSonderzahlung(stichtag, anstellung)
 
-        monatsKosten = [aktStelle.anteilig(self.ötv.monatsGesamt(stichtag.year, aktStelle.gus))
-                        for stichtag, aktStelle in stellePerMonat]
-
-        for (i, (stichtag, aktStelle)), kosten in zip(enumerate(stellePerMonat), monatsKosten):
-
-            sonderzahlung = self.calcSonderzahlung(stichtag, bis, stellePerMonat[:i])
-
-            details.append(MonatsKosten(stichtag, aktStelle.gus, aktStelle.umfangProzent, kosten, sonderzahlung or Decimal(0.)))
+            details.append(MonatsKosten(stichtag, stelle, kosten, sonderzahlung or Decimal(0.)))
             total += kosten
 
         return total, details
 
-    def calcSonderzahlung(self, stichtag: date, bis: date, vorgeschichte: List[Tuple[date, Stelle]]) -> Optional[Decimal]:
+    def calcSonderzahlung(self, stichtag: date, anstellung : Anstellung) -> Optional[Decimal]:
         """
         Calculate the Jahressonderzahlung according to
         https://oeffentlicher-dienst.info/tv-l/allg/jahressonderzahlung.html
@@ -103,29 +136,13 @@ class Summierer:
         if stichtag.month != 11:
             return None
         # if end date is before Dez, it's zero
-        if bis < date(stichtag.year, 12, 1):
+        if anstellung.bis < date(stichtag.year, 12, 1):
             return Decimal(0.)
 
-        # default case: average over past
-        if len(vorgeschichte) == 0:
-            raise Exception("Cannot compute Sonderzahlung without Vorgeschichte")
+        baseStellen = anstellung.findBaseStellen(stichtag.year)
 
-        baseStellen = [None, None, None]
-        for refTag, gültigeStelle in reversed(vorgeschichte):
-            # Jul+Aug+Sep are the default base months
-            for mIndx, mth in enumerate((7, 8, 9)):
-                if not baseStellen[mIndx] and refTag < date(stichtag.year, mth + 1, 1):
-                    baseStellen[mIndx] = gültigeStelle
-            if all(baseStellen):
-                break
-
-        # falls es keine Bases gab, dann gilt das letzte Gehalt
-        if not any(baseStellen):
-            baseStellen[2] = vorgeschichte[-1][1]
-
-        sonderzahls = [self.ötv.sonderZahlProzent(stichtag.year, stelle.gus) for stelle in baseStellen if stelle]
-        # print(sonderzahls)
-        return sum(sonderzahls) / len(sonderzahls)
+        sonderzahls = [self.ötv.sonderzahlung(stichtag.year, stelle) for stelle in baseStellen]
+        return dec(sum(sonderzahls) / len(sonderzahls))
 
 
 if __name__ == '__main__':

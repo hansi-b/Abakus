@@ -142,14 +142,21 @@ class ÖtvKosten:
         assert key not in self.__gehälter, "Gehalt für {} in {} schon gesetzt (ist {})".format(jahr, gruppe, self.__gehälter[key])
         self.__gehälter[key] = gehälter
 
-    def monatsGesamt(self, jahr: int, gus: GuS):
+    def monatsGesamt(self, jahr: int, stelle: Stelle):
+        return stelle.anteilig(self._monatsGesamt(jahr, stelle.gus))
+
+    def _monatsGesamt(self, jahr: int, gus: GuS):
         """
             :return: die monatlichen Gesamtkosten mit Arbeitgeberzuschlag,
                     aber ohne Jahressonderzahlung
         """
         return dec(self.__getGehälter(jahr, gus.gruppe).bruttoByStufe[gus.stufe] * self.zuschlag)
 
-    def sonderZahlProzent(self, jahr: int, gus: GuS):
+    def sonderzahlung(self, jahr: int, stelle: Stelle):
+        
+        return self.monatsGesamt(jahr, stelle) * self._sonderZahlProzent(jahr, stelle.gus) / DEC_100
+
+    def _sonderZahlProzent(self, jahr: int, gus: GuS):
         """
             :return: die Jahressonderzahlung in Prozent
         """
