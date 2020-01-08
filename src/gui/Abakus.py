@@ -2,6 +2,7 @@ import csv
 import datetime
 import io
 import sys
+import itertools
 
 from PySide2 import QtWidgets as qw
 from PySide2.QtCore import QDate, QLocale, Qt, QSettings
@@ -123,6 +124,15 @@ class WeiterOderNeu(qw.QWidget):
         zeile.addStretch(1)
         zeile.setContentsMargins(-1, 0, -1, 0)
         self.setLayout(zeile)
+        
+    def inChangeEvents(self):
+        """
+            the change events of the widgets in this widget
+        """
+        return [self.stufe.comboBox.currentIndexChanged,
+                self.seitPicker.dateChanged,
+                self.umfangSpinner.valueChanged,
+                self.group.buttonClicked]
 
     def istWeiter(self):
         return self.group.checkedButton() is self.weiterButton
@@ -161,6 +171,17 @@ class Einstellung(qw.QWidget):
         zeile.setContentsMargins(-1, 0, -1, 0)
         self.setLayout(zeile)
 
+    def inChangeEvents(self):
+        """
+            the change events of the widgets in this widget
+        """
+        return [
+            self.vonPicker.dateChanged,
+            self.bisPicker.dateChanged,
+            self.gruppe.comboBox.currentIndexChanged,
+            self.umfang.valueChanged
+            ]
+
 
 # don't want to have to rely on the right locale being available
 monthNames = "Jan Feb Mär Apr Mai Jun Jul Aug Sep Okt Nov Dez".split()
@@ -188,7 +209,7 @@ class Details(qw.QWidget):
         zeile.addWidget(self.table)
         zeile.setContentsMargins(-1, 0, -1, 0)
         self.setLayout(zeile)
-
+    
     def keyPressEvent(self, event):
         """
         copied from https://stackoverflow.com/a/40473855
@@ -281,6 +302,21 @@ class Abakus(qw.QWidget):
         layout.addStretch(1)
         self.setLayout(layout)
 
+        self.wireInOutReset()
+
+    def wireInOutReset(self):
+        """
+            Whenever an input value changes, clear the results
+        """
+        inEvents = self.weiterOderNeu.inChangeEvents() + self.beschäftigung.inChangeEvents()
+        outClears = [
+            self.details.clear,
+            self.summe.total.clear
+            ]
+
+        for i, o in itertools.product(inEvents, outClears):
+            i.connect(o)
+        
     def berechne(self):
         vonDate = qDate2date(self.beschäftigung.vonPicker.date())
         bisDate = qDate2date(self.beschäftigung.bisPicker.date())
