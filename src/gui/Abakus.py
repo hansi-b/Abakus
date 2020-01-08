@@ -69,18 +69,6 @@ def germanDatePicker(selected: QDate) -> qw.QDateEdit:
     return picker
 
 
-def futurePicker(selected: QDate) -> qw.QDateEdit:
-    picker = germanDatePicker(selected)
-    picker.setMinimumDate(QDate.currentDate())
-    return picker
-
-
-def pastPicker(selected: QDate) -> qw.QDateEdit:
-    picker = germanDatePicker(selected)
-    picker.setMaximumDate(QDate.currentDate())
-    return picker
-
-
 class GruppeCombo(EnumCombo):
 
     def __init__(self):
@@ -115,7 +103,7 @@ class WeiterOderNeu(qw.QWidget):
 
         seitLabel = qw.QLabel("seit")
         zeile.addWidget(seitLabel)
-        self.seitPicker = pastPicker(date2QDate(offsetSeitDate(datetime.date.today())))
+        self.seitPicker = germanDatePicker(date2QDate(offsetSeitDate(datetime.date.today())))
         zeile.addWidget(self.seitPicker)
 
         umfang = qw.QLabel("Umfang")
@@ -150,10 +138,10 @@ class Einstellung(qw.QWidget):
         zeile = qw.QHBoxLayout()
 
         vonDate = date2QDate(offsetVonDate(datetime.date.today()))
-        self.vonPicker = futurePicker(vonDate)
+        self.vonPicker = germanDatePicker(vonDate)
 
         bisDate = vonDate.addMonths(2)
-        self.bisPicker = futurePicker(QDate(bisDate.year(), bisDate.month(), bisDate.daysInMonth()))
+        self.bisPicker = germanDatePicker(QDate(bisDate.year(), bisDate.month(), bisDate.daysInMonth()))
 
         zeile.addWidget(qw.QLabel("von"))
         zeile.addWidget(self.vonPicker)
