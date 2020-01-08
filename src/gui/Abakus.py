@@ -8,7 +8,7 @@ from PySide2.QtCore import QDate, QLocale, Qt, QSettings
 from PySide2.QtGui import QFontDatabase, QIcon, QKeySequence, QGuiApplication
 
 from gui.cssVars import varredCss2Css
-from gui.widgets import EnumCombo, percentSpinner
+from gui.widgets import EnumCombo, percentSpinner, ensureBeforeAfter
 
 from abakus.laufend import Summierer, MonatsKosten, Anstellung
 from abakus.model import Entgeltgruppe, Stufe, Stelle, GuS, dec
@@ -142,6 +142,8 @@ class Einstellung(qw.QWidget):
 
         bisDate = vonDate.addMonths(2)
         self.bisPicker = germanDatePicker(QDate(bisDate.year(), bisDate.month(), bisDate.daysInMonth()))
+
+        ensureBeforeAfter(self.vonPicker, self.bisPicker)
 
         zeile.addWidget(qw.QLabel("von"))
         zeile.addWidget(self.vonPicker)
@@ -280,12 +282,13 @@ class Abakus(qw.QWidget):
         self.setLayout(layout)
 
     def berechne(self):
+        vonDate = qDate2date(self.beschäftigung.vonPicker.date())
         bisDate = qDate2date(self.beschäftigung.bisPicker.date())
+
         gruppe = self.beschäftigung.gruppe.currentItem()
         stufe = self.weiterOderNeu.stufe.currentItem()
         umfang = dec(self.beschäftigung.umfang.value())
-        
-        vonDate = qDate2date(self.beschäftigung.vonPicker.date())
+
         stufenStart = qDate2date(self.weiterOderNeu.seit()) if self.weiterOderNeu.istWeiter() else vonDate
 
         anst = Anstellung(Stelle(GuS(gruppe, stufe), stufenStart, umfang), vonDate, bisDate)

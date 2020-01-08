@@ -1,4 +1,5 @@
 from PySide2 import QtWidgets as qw
+from PySide2.QtCore import QDate
 
 __author__ = "Hans Bering"
 __copyright__ = "Copyright 2019, Hans Bering"
@@ -38,6 +39,23 @@ class EnumCombo(qw.QWidget):
     def currentItem(self):
         idx = self.comboBox.currentIndex()
         return self.itemByIndex[idx]
+
+
+def ensureBeforeAfter(before:qw.QDateEdit, after:qw.QDateEdit):
+    """
+        Wire the two date edit fields such that the "after" field always has
+        a minimum of the "before" field.
+        
+        If the "before" field is set to a value after the current "after" date,
+        the "after" date is also changed to that date.
+    """
+    
+    def adaptAfter(beforeDate: QDate):
+        if after.date() < beforeDate:
+            after.setDate(beforeDate)
+        after.setMinimumDate(beforeDate)
+
+    before.dateChanged.connect(lambda : adaptAfter(before.date()))
 
 
 if __name__ == '__main__':
