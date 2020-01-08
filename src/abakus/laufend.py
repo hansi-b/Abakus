@@ -77,6 +77,12 @@ class Anstellung:
             currDate = lastDateInNextMonth(currDate)
         return result
 
+    def monateAngestellt(self, year: int) -> int:
+        """
+        :return: the number of months [0-12] for which this Anstellung applied in the argument year
+        """
+        return sum(1 for t, _s in self.monatsListe if t.year == year)
+
     def findBaseStellen(self, year: int) -> List[Stelle]:
         """
         :return: the Stellen which make up the Basis for the Sonderzahlung in the argument year
@@ -135,14 +141,20 @@ class Summierer:
         # if not Nov, nothing to do here
         if stichtag.month != 11:
             return None
+
         # if end date is before Dez, it's zero
-        if anstellung.bis < date(stichtag.year, 12, 1):
+        referenzJahr = stichtag.year
+        if anstellung.bis < date(referenzJahr, 12, 1):
             return Decimal(0.)
 
-        baseStellen = anstellung.findBaseStellen(stichtag.year)
+        baseStellen = anstellung.findBaseStellen(referenzJahr)
 
-        sonderzahls = [self.ötv.sonderzahlung(stichtag.year, stelle) for stelle in baseStellen]
-        return dec(sum(sonderzahls) / len(sonderzahls))
+        sonderzahlBases = [self.ötv.sonderzahlung(referenzJahr, stelle) for stelle in baseStellen]
+
+        # be careful not to round the Anteil - this amplifies to many Euros
+        anteil = Decimal(anstellung.monateAngestellt(referenzJahr) / 12.)
+
+        return dec(anteil * sum(sonderzahlBases) / len(sonderzahlBases))
 
 
 if __name__ == '__main__':
